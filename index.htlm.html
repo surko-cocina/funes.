@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1410,82 +1410,76 @@ function proceedCheckout(){
 👤 *${name}*
 📱 ${phone}
 `;
-  if(city)msg+=`🏙️ ${city}
-`;if(address)msg+=`📍 ${address}
-`;if(date)msg+=`📅 ${date}
+
+if(city) msg += `🏙️ ${city}
 `;
-  msg+=`━━━━━━━━━━━━━━━━
+
+if(address) msg += `📍 ${address}
 `;
-  cart.forEach(i=>{msg+=`• ${i.name}${i.variant?' ('+i.variant+')':''} ×${i.qty} — $${(i.price*i.qty).toLocaleString('es-AR')}
-`;});
-  msg+=`━━━━━━━━━━━━━━━━
+
+if(date) msg += `📅 ${date}
+`;
+
+msg += `━━━━━━━━━━━━━━━━
+`;
+
+cart.forEach(i => {
+  msg += `• ${i.name}${i.variant ? ' ('+i.variant+')' : ''} ×${i.qty} — $${(i.price*i.qty).toLocaleString('es-AR')}
+`;
+});
+
+msg += `━━━━━━━━━━━━━━━━
 💰 *TOTAL: $${total.toLocaleString('es-AR')}*`;
-  if(notes)msg+=`
+
+if(notes) msg += `
 💬 ${notes}`;
-  window.open(`https://wa.me/${cfg.whatsapp||'5491100000000'}?text=${encodeURIComponent(msg)}`,'_blank');
-  cart=[];updateCartUI();closeCart();showToast('✓ Pedido enviado','success');
-  ['cf-name','cf-phone','cf-city','cf-address','cf-notes'].forEach(id=>{document.getElementById(id).value='';});
-  document.getElementById('cf-date').value='';
+
+window.open(
+  `https://wa.me/${cfg.whatsapp || '5491100000000'}?text=${encodeURIComponent(msg)}`,
+  '_blank'
+);
+
+cart = [];
+updateCartUI();
+closeCart();
+
+showToast('✓ Pedido enviado','success');
+
+['cf-name','cf-phone','cf-city','cf-address','cf-notes']
+.forEach(id => {
+  document.getElementById(id).value = '';
+});
+
+document.getElementById('cf-date').value = '';
+
 }
 
-// ADMIN
-function initAdminDashboard(){
-  const orders=LS.get('orders')||[];
-  const products=LS.get('products')||DP;
-  const today=new Date().toISOString().split('T')[0];
-  document.getElementById('metric-today').textContent=orders.filter(o=>o.created===today).length;
-  document.getElementById('metric-pending').textContent=orders.filter(o=>o.status==='nuevo').length;
-  document.getElementById('metric-products').textContent=products.length;
-  document.getElementById('metric-total').textContent='$'+orders.filter(o=>o.status==='entregado').reduce((s,o)=>s+o.total,0).toLocaleString('es-AR');
-  const rec=document.getElementById('recent-orders-list');
-  if(orders.length){rec.innerHTML='<div style="display:flex;flex-direction:column;gap:1px;background:var(--border);">'+orders.slice().reverse().slice(0,5).map(o=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--bg2);"><div><div style="font-size:13px;font-weight:600;">${o.client}</div><div style="font-size:10px;color:var(--text-lt);margin-top:1px;">${o.date}</div></div><div style="text-align:right;"><div style="font-family:var(--font-serif);font-size:15px;color:var(--gold-dk);">$${o.total.toLocaleString('es-AR')}</div><span class="status-pill sp-${o.status}" style="margin-top:3px;display:inline-block;">${statusLabel(o.status)}</span></div></div>`).join('')+'</div>';}
-  else rec.innerHTML='<p style="padding:12px 0;color:var(--text-lt);font-size:12px;">Sin pedidos aún</p>';
-  const tp=document.getElementById('top-products-list');
-  tp.innerHTML='<div style="display:flex;flex-direction:column;gap:1px;background:var(--border);">'+products.slice(0,5).map(p=>`<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg2);">${p.images&&p.images.length?`<img src="${p.images[0]}" style="width:32px;height:32px;object-fit:cover;">`:`<span style="font-size:18px;">${p.emoji||'🧁'}</span>`}<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div><div style="font-size:9px;color:var(--text-lt);text-transform:uppercase;letter-spacing:1px;">${p.cat}</div></div><div style="font-family:var(--font-serif);font-size:14px;color:var(--gold-dk);flex-shrink:0;">$${p.price.toLocaleString('es-AR')}</div></div>`).join('')+'</div>';
-}
-function statusLabel(s){return{nuevo:'Nuevo',confirmado:'Confirmado',preparacion:'Preparación',listo:'Listo',entregado:'Entregado',cancelado:'Cancelado'}[s]||s;}
-function renderOrdersTable(){const orders=LS.get('orders')||[];const fv=document.getElementById('order-status-filter')?.value||'';const filtered=fv?orders.filter(o=>o.status===fv):orders;document.getElementById('orders-table-body').innerHTML=filtered.slice().reverse().map(o=>`<tr><td><span class="order-id">#SK-${o.id}</span></td><td><div style="font-weight:600;font-size:12px;">${o.client}</div><div style="font-size:10px;color:var(--text-lt);">${o.phone}</div></td><td style="font-size:11px;color:var(--text-md);">${o.created}</td><td><span style="font-family:var(--font-serif);font-size:15px;color:var(--gold-dk);">$${o.total.toLocaleString('es-AR')}</span></td><td><span class="status-pill sp-${o.status}">${statusLabel(o.status)}</span></td><td style="white-space:nowrap;"><div style="display:flex;gap:5px;"><button class="tbl-btn" onclick="openOrderDetail(${o.id})">Ver</button><select style="background:var(--bg3);border:1px solid var(--border);padding:4px 8px;font-size:10px;color:var(--text);outline:none;" onchange="changeOrderStatus(${o.id},this.value)"><option value="">Estado</option><option value="nuevo">Nuevo</option><option value="confirmado">Confirmado</option><option value="preparacion">Preparación</option><option value="listo">Listo</option><option value="entregado">Entregado</option><option value="cancelado">Cancelado</option></select></div></td></tr>`).join('');}
-function changeOrderStatus(id,status){if(!status)return;const orders=LS.get('orders')||[];const o=orders.find(x=>x.id===id);if(o){o.status=status;LS.set('orders',orders);renderOrdersTable();showToast('Estado actualizado','success');}}
-function openOrderDetail(id){const o=(LS.get('orders')||[]).find(x=>x.id===id);if(!o)return;document.getElementById('order-detail-content').innerHTML=`<div class="od-grid"><div class="od-f"><span class="od-lbl">Cliente</span><span class="od-val">${o.client}</span></div><div class="od-f"><span class="od-lbl">Teléfono</span><span class="od-val">${o.phone}</span></div><div class="od-f"><span class="od-lbl">Ciudad</span><span class="od-val">${o.city||'–'}</span></div><div class="od-f"><span class="od-lbl">Entrega</span><span class="od-val">${o.address||'–'}</span></div><div class="od-f"><span class="od-lbl">Fecha</span><span class="od-val">${o.date}</span></div><div class="od-f"><span class="od-lbl">Estado</span><span class="od-val"><span class="status-pill sp-${o.status}">${statusLabel(o.status)}</span></span></div></div><div style="background:var(--bg3);padding:14px;margin-bottom:10px;"><div style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dk);margin-bottom:8px;font-weight:700;">Productos</div>${o.items.map(i=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;"><span>${i.name} ×${i.qty}</span><span style="font-weight:600;">$${(i.price*i.qty).toLocaleString('es-AR')}</span></div>`).join('')}<div style="display:flex;justify-content:space-between;padding-top:10px;font-family:var(--font-serif);font-size:18px;"><span>Total</span><span style="color:var(--gold-dk);">$${o.total.toLocaleString('es-AR')}</span></div></div>${o.notes?`<div style="background:var(--bg3);padding:10px;font-size:12px;color:var(--text-md);">${o.notes}</div>`:''}`;const cfg=LS.get('config')||DCFG;document.getElementById('order-wa-btn').onclick=()=>{let msg=`✦ *SURKO* ✦
-#SK-${o.id} — *${statusLabel(o.status)}*
-
-${o.client} — ${o.phone}
-${o.date}
-
-`;o.items.forEach(i=>{msg+=`• ${i.name} ×${i.qty} — $${(i.price*i.qty).toLocaleString('es-AR')}
-`;});msg+=`
-💰 $${o.total.toLocaleString('es-AR')}`;if(o.notes)msg+=`
-💬 ${o.notes}`;window.open(`https://wa.me/${o.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');};document.getElementById('order-detail-modal').classList.add('open');}
-function closeOrderDetail(){document.getElementById('order-detail-modal').classList.remove('open');}
-function renderProductsTable(){const products=LS.get('products')||DP;const q=document.getElementById('admin-product-search')?.value.toLowerCase()||'';const filtered=q?products.filter(p=>p.name.toLowerCase().includes(q)):products;const sm={disponible:'sp-entregado',encargo:'sp-nuevo',limited:'sp-preparacion',agotado:'sp-cancelado'};const sl={disponible:'Disponible',encargo:'Por Encargo',limited:'Limitado',agotado:'Agotado'};document.getElementById('products-table-body').innerHTML=filtered.map(p=>`<tr><td><div style="display:flex;align-items:center;gap:10px;">${p.images&&p.images.length?`<img src="${p.images[0]}" style="width:36px;height:36px;object-fit:cover;">`:`<span style="font-size:20px;">${p.emoji||'🧁'}</span>`}<span style="font-weight:600;font-size:12px;">${p.name}</span></div></td><td style="font-size:10px;color:var(--text-lt);text-transform:uppercase;letter-spacing:1px;">${p.cat}</td><td><span style="font-family:var(--font-serif);font-size:15px;color:var(--gold-dk);">$${p.price.toLocaleString('es-AR')}</span></td><td><span class="status-pill ${sm[p.status]||'sp-nuevo'}">${sl[p.status]||p.status}</span></td><td><div style="display:flex;gap:5px;"><button class="tbl-btn" onclick="editProduct(${p.id})">Editar</button><button class="tbl-btn danger" onclick="deleteProduct(${p.id})">Eliminar</button></div></td></tr>`).join('');}
-let pendingImages=[];
-function handleImgUpload(e){processFiles(Array.from(e.target.files));}
-function onDragOver(e){e.preventDefault();document.getElementById('upload-zone').classList.add('drag-over');}
-function onDragLeave(){document.getElementById('upload-zone').classList.remove('drag-over');}
-function onDrop(e){e.preventDefault();document.getElementById('upload-zone').classList.remove('drag-over');processFiles(Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')));}
-function processFiles(files){const rem=5-pendingImages.length;files.slice(0,rem).forEach(file=>{const reader=new FileReader();reader.onload=e=>{pendingImages.push(e.target.result);renderImgPreviews();};reader.readAsDataURL(file);});}
-function renderImgPreviews(){document.getElementById('img-preview-wrap').innerHTML=pendingImages.map((src,i)=>`<div class="img-pw"><img src="${src}" class="img-pt" alt=""><button class="img-del" onclick="removeImg(${i})">✕</button></div>`).join('');}
-function removeImg(i){pendingImages.splice(i,1);renderImgPreviews();}
-function openProductForm(id){const cats=LS.get('categories')||DC;document.getElementById('pf-cat').innerHTML=cats.map(c=>`<option value="${c.name}">${c.emoji} ${c.name}</option>`).join('');pendingImages=[];renderImgPreviews();document.getElementById('img-upload-input').value='';if(id){const p=(LS.get('products')||DP).find(x=>x.id===id);if(!p)return;document.getElementById('product-form-title').textContent='Editar Producto';document.getElementById('pf-id').value=p.id;document.getElementById('pf-name').value=p.name;document.getElementById('pf-cat').value=p.cat;document.getElementById('pf-price').value=p.price;document.getElementById('pf-emoji').value=p.emoji||'';document.getElementById('pf-status').value=p.status;document.getElementById('pf-desc').value=p.desc||'';document.getElementById('pf-variants').value=p.variants||'';pendingImages=(p.images&&p.images.slice())||[];renderImgPreviews();}else{document.getElementById('product-form-title').textContent='Nuevo Producto';document.getElementById('pf-id').value='';['pf-name','pf-price','pf-emoji','pf-desc','pf-variants'].forEach(id=>document.getElementById(id).value='');document.getElementById('pf-status').value='disponible';}document.getElementById('product-form-modal').classList.add('open');}
-function editProduct(id){openProductForm(id);}
-function closeProductForm(){document.getElementById('product-form-modal').classList.remove('open');}
-function saveProduct(){const name=document.getElementById('pf-name').value.trim();const price=parseFloat(document.getElementById('pf-price').value);if(!name||!price){showToast('⚠ Completá nombre y precio','');return;}const products=LS.get('products')||DP;const eid=parseInt(document.getElementById('pf-id').value);const newP={id:eid||(Date.now()),name,cat:document.getElementById('pf-cat').value,price,emoji:document.getElementById('pf-emoji').value||'🧁',status:document.getElementById('pf-status').value,desc:document.getElementById('pf-desc').value,variants:document.getElementById('pf-variants').value,images:[...pendingImages]};if(eid){const idx=products.findIndex(p=>p.id===eid);if(idx>=0)products[idx]=newP;}else products.push(newP);LS.set('products',products);closeProductForm();renderProductsTable();showToast('✓ Producto guardado','success');}
-function deleteProduct(id){if(!confirm('¿Eliminar?'))return;LS.set('products',(LS.get('products')||DP).filter(p=>p.id!==id));renderProductsTable();showToast('Eliminado','');}
-function renderCategoriesAdmin(){const cats=LS.get('categories')||DC;document.getElementById('categories-list').innerHTML=cats.map(c=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--bg2);"><div style="display:flex;align-items:center;gap:10px;"><span style="font-size:18px;">${c.emoji}</span><span style="font-size:13px;font-weight:600;">${c.name}</span></div><div style="display:flex;gap:6px;"><button class="tbl-btn" onclick="editCategory(${c.id})">Editar</button><button class="tbl-btn danger" onclick="deleteCategory(${c.id})">Eliminar</button></div></div>`).join('');}
-function openCategoryForm(id){document.getElementById('catf-id').value=id||'';if(id){const c=(LS.get('categories')||DC).find(x=>x.id===id);if(c){document.getElementById('catf-name').value=c.name;document.getElementById('catf-emoji').value=c.emoji;}}else{document.getElementById('catf-name').value='';document.getElementById('catf-emoji').value='';}document.getElementById('cat-form-modal').classList.add('open');}
-function editCategory(id){openCategoryForm(id);}
-function closeCategoryForm(){document.getElementById('cat-form-modal').classList.remove('open');}
-function saveCategory(){const name=document.getElementById('catf-name').value.trim();if(!name){showToast('⚠ Nombre requerido','');return;}const cats=LS.get('categories')||DC;const eid=parseInt(document.getElementById('catf-id').value);const newC={id:eid||Date.now(),name,emoji:document.getElementById('catf-emoji').value||'🏷️'};if(eid){const idx=cats.findIndex(c=>c.id===eid);if(idx>=0)cats[idx]=newC;}else cats.push(newC);LS.set('categories',cats);closeCategoryForm();renderCategoriesAdmin();showToast('✓ Guardado','success');}
-function deleteCategory(id){if(!confirm('¿Eliminar?'))return;LS.set('categories',(LS.get('categories')||DC).filter(c=>c.id!==id));renderCategoriesAdmin();}
-function renderClientsAdmin(){const clients=LS.get('clients')||[];const el=document.getElementById('clients-list');if(!clients.length){el.innerHTML='<p style="padding:24px;color:var(--text-lt);font-size:12px;">Sin clientes registrados aún</p>';return;}el.innerHTML=`<table class="clients-table"><thead><tr><th>Nombre</th><th>Teléfono</th><th>Ciudad</th><th>Pedidos</th></tr></thead><tbody>${clients.map(c=>`<tr><td style="font-weight:600;">${c.name}</td><td style="color:var(--text-md);">${c.phone}</td><td style="color:var(--text-md);">${c.city||'–'}</td><td style="color:var(--gold-dk);font-weight:600;">${c.orders||1}</td></tr>`).join('')}</tbody></table>`;}
-function loadConfig(){const c=LS.get('config')||DCFG;if(document.getElementById('config-whatsapp')){['whatsapp','address','hours','city'].forEach(k=>{const el=document.getElementById('config-'+k);if(el)el.value=c[k]||'';});document.getElementById('config-ig').value=c.instagram||'';document.getElementById('config-fb').value=c.facebook||'';document.getElementById('config-delivery').value=c.delivery||'';document.getElementById('config-cancel').value=c.cancel||'';}}
-function saveConfig(){LS.set('config',{whatsapp:document.getElementById('config-whatsapp').value.trim(),address:document.getElementById('config-address').value.trim(),hours:document.getElementById('config-hours').value.trim(),city:document.getElementById('config-city').value.trim(),instagram:document.getElementById('config-ig').value.trim(),facebook:document.getElementById('config-fb').value.trim(),delivery:document.getElementById('config-delivery').value.trim(),cancel:document.getElementById('config-cancel').value.trim()});showToast('✓ Configuración guardada','success');}
-function previewBanner(){document.getElementById('banner-prev-title').textContent=document.getElementById('banner-title-input').value;document.getElementById('banner-prev-sub').textContent=document.getElementById('banner-subtitle-input').value;}
-function saveBanner(){const b={title:document.getElementById('banner-title-input').value,subtitle:document.getElementById('banner-subtitle-input').value};LS.set('banner',b);showToast('✓ Banner guardado','success');}
-function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(type?' '+type:'');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
-
-// Init banner inputs
-(()=>{const b=LS.get('banner')||DBAN;const ti=document.getElementById('banner-title-input');const si=document.getElementById('banner-subtitle-input');if(ti)ti.value=b.title;if(si)si.value=b.subtitle;})();
 </script>
+
+<!-- FIREBASE CORRECTO -->
+<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
+<script>
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA4wJ79CawSjE3MHDga33joxR_zorxEEgw",
+  authDomain: "surko1.firebaseapp.com",
+  projectId: "surko1",
+  storageBucket: "surko1.firebasestorage.app",
+  messagingSenderId: "823281056638",
+  appId: "1:823281056638:web:10d0ac88f046739c1a112f"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+console.log("Firebase conectado");
+
+</script>
+
 </body>
 </html>
