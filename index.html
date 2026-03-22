@@ -879,33 +879,41 @@ img{display:block;}
 .amob-btn.client-btn:hover{background:var(--dark3);}
 .amob-btn.personal-btn{background:transparent;border:1.5px solid var(--border);color:var(--text-md);}
 .amob-btn.personal-btn:hover{border-color:var(--gold-bdr);color:var(--gold-dk);}
+/* Desktop: personal form always visible in right panel */
 .personal-form-section{display:block;}
 
-/* Personal form overlay for mobile — slides up from bottom */
 @media(max-width:900px){
+  /* Hide the old right panel — mobile uses fullscreen banner */
+  .access-right{display:none!important;}
+
+  /* Personal form becomes fullscreen overlay on mobile */
   #personal-form-section{
-    display:none;
+    display:none!important;
     position:fixed;inset:0;z-index:2000;
     background:var(--bg);
     flex-direction:column;
     overflow-y:auto;
   }
   #personal-form-section.mobile-open{
-    display:flex;
+    display:flex!important;
   }
   .access-form-wrap{
     flex:1;display:flex;flex-direction:column;justify-content:center;
-    padding:56px 32px 40px;
+    padding:72px 32px 48px;
     max-width:100%;
+    position:relative;
   }
   #back-to-modes{
-    display:flex!important;
+    display:none;
     position:absolute;top:20px;left:24px;
     align-items:center;gap:6px;
     background:none;border:none;
     color:var(--text-lt);font-size:10px;
     letter-spacing:1.5px;text-transform:uppercase;
     cursor:pointer;font-family:var(--font-sans);font-weight:600;padding:8px 0;
+  }
+  #personal-form-section.mobile-open #back-to-modes{
+    display:flex;
   }
 }
 </style>
@@ -945,7 +953,8 @@ img{display:block;}
     </div>
     <img class="amb-img" id="amb-img"
       src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&q=80"
-      alt="SURKO Gourmet" style="display:block;">
+      alt="SURKO Gourmet" style="display:block;"
+      onerror="this.style.display='none';document.getElementById('amb-empty').style.display='none';">
     <!-- Gradient overlays -->
     <div class="amb-overlay"></div>
     <div class="amb-overlay-top"></div>
@@ -1548,9 +1557,21 @@ img{display:block;}
 //  Datos en localStorage, carga instantánea
 // ══════════════════════════════════════
 
+// LS: localStorage con fallback en memoria para file:// o navegadores restrictivos
+const _memStore = {};
 const LS = {
-  get: k => { try{ return JSON.parse(localStorage.getItem('surko_'+k)); }catch(e){ return null; } },
-  set: (k,v) => { try{ localStorage.setItem('surko_'+k, JSON.stringify(v)); }catch(e){} }
+  get: k => {
+    try {
+      const v = localStorage.getItem('surko_'+k);
+      return v !== null ? JSON.parse(v) : (_memStore[k] !== undefined ? _memStore[k] : null);
+    } catch(e) {
+      return _memStore[k] !== undefined ? _memStore[k] : null;
+    }
+  },
+  set: (k,v) => {
+    _memStore[k] = v;
+    try { localStorage.setItem('surko_'+k, JSON.stringify(v)); } catch(e) {}
+  }
 };
 
 const DC=[{id:1,name:'Tortas',emoji:'🎂'},{id:2,name:'Boxes',emoji:'🎁'},{id:3,name:'Cookies',emoji:'🍪'},{id:4,name:'Brownies',emoji:'🍫'},{id:5,name:'Postres',emoji:'🍮'},{id:6,name:'Desayunos',emoji:'☕'},{id:7,name:'Temáticas',emoji:'🎉'}];
@@ -1612,10 +1633,9 @@ function initAccessLayout(){
   if(m){
     pfs.classList.remove('mobile-open');
   } else {
-    document.getElementById('access-mode-btns').style.display='none';
+    // Desktop: show form, hide mobile mode buttons
     pfs.style.display='block';
   }
-  document.getElementById('back-to-modes').style.display='none';
 }
 initAccessLayout();
 window.addEventListener('resize',initAccessLayout);
