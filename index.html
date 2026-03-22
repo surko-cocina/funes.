@@ -641,16 +641,8 @@ img{display:block;}
 ::-webkit-scrollbar-thumb{background:var(--bg5);}
 ::-webkit-scrollbar-thumb:hover{background:var(--gold-dk);}
 
-/* RESPONSIVE */
+/* ══ RESPONSIVE — non-access elements ══ */
 @media(max-width:900px){
-  .access-left{display:none;}
-  .access-mobile-banner{display:flex;}
-  .access-mode-btns{display:flex;}
-  .access-right{width:100%;padding:0;flex-direction:column;}
-  .access-right-top{display:none;}
-  .access-right-inner{padding:0;flex:1;display:flex;flex-direction:column;}
-  .access-form-wrap{max-width:100%;}
-  .access-right-foot{display:none;}
   .hero{grid-template-columns:1fr;}
   .hero-img-col{min-height:280px;}
   .hero-text-col{padding:36px 24px;}
@@ -663,257 +655,151 @@ img{display:block;}
   .admin-sidebar{width:190px;min-width:190px;}
 }
 @media(max-width:600px){
-  .access-right-inner{padding:0;}
   .metrics-row{grid-template-columns:1fr;}
   .footer-grid{grid-template-columns:1fr;}
   .admin-sidebar{width:180px;min-width:180px;}
   .c-header{padding:0 20px;}
 }
 
-/* ══════════════════════════════
-   MOBILE ACCESS SCREEN — PREMIUM REDESIGN
-══════════════════════════════ */
-.access-mobile-banner{
-  display:none;
-  width:100%;
-  flex-direction:column;
-  min-height:100dvh;
-  position:relative;
-  overflow:hidden;
-  background:#0f0d0a;
+/* ══ ACCESS SCREEN — DESKTOP ══ */
+#access-screen{
+  position:fixed;inset:0;z-index:1000;
+  display:flex;
+}
+/* desktop: hide mobile banner */
+.mob-screen{display:none;}
+/* desktop: show right panel */
+.access-right{
+  width:min(520px,48%);background:var(--bg);
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:36px 52px;
 }
 
-/* Full-screen hero image */
-.amb-img{
+/* ══ ACCESS SCREEN — MOBILE ══ */
+@media(max-width:900px){
+  /* Hide desktop panels */
+  .access-left{display:none !important;}
+  .access-right{display:none !important;}
+
+  /* Show fullscreen mobile screen */
+  .mob-screen{
+    display:flex;
+    flex-direction:column;
+    width:100%;
+    min-height:100vh;
+    min-height:100dvh;
+    position:relative;
+    overflow:hidden;
+    background:#0f0d0a;
+  }
+}
+
+/* ── MOB-SCREEN internals (always defined, only shown on mobile) ── */
+.mob-bg-img{
   position:absolute;inset:0;width:100%;height:100%;
   object-fit:cover;opacity:.55;
-  transform:scale(1.03);
-  transition:transform 8s ease;
 }
-.amb-img.loaded{transform:scale(1);}
-
-/* Layered gradient overlays for depth */
-.amb-overlay{
+.mob-bg-dark{
   position:absolute;inset:0;
-  background:
-    linear-gradient(180deg,
-      rgba(12,9,6,.55) 0%,
-      rgba(12,9,6,.1) 30%,
-      rgba(12,9,6,.15) 55%,
-      rgba(10,7,4,.92) 100%
-    );
+  background:linear-gradient(180deg,rgba(10,7,4,.6) 0%,rgba(10,7,4,.05) 35%,rgba(10,7,4,.1) 60%,rgba(8,5,2,.95) 100%);
   z-index:1;
 }
-.amb-overlay-top{
-  position:absolute;top:0;left:0;right:0;height:120px;
-  background:linear-gradient(180deg,rgba(8,6,4,.7) 0%,transparent 100%);
-  z-index:2;
-}
-
-/* Fallback when no image */
-.amb-empty{
-  position:absolute;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:8px;
-  background:linear-gradient(160deg,#1a1612 0%,#0f0c0a 60%,#0a0806 100%);
-}
-.amb-empty-icon{font-size:28px;opacity:.2;}
-.amb-empty-txt{font-size:9px;color:rgba(255,255,255,.2);letter-spacing:2.5px;text-transform:uppercase;}
-
-/* Top bar: logo centered */
-.amb-topbar{
-  position:relative;z-index:10;
+.mob-topbar{
+  position:relative;z-index:5;
   display:flex;align-items:center;justify-content:center;
-  padding:52px 28px 0;
+  padding:54px 28px 0;
 }
-
-/* Decorative horizontal rule */
-.amb-rule{
-  position:relative;z-index:10;
-  display:flex;align-items:center;justify-content:center;
-  gap:12px;
-  padding:18px 40px 0;
+.mob-divider{
+  position:relative;z-index:5;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:16px 40px 0;
 }
-.amb-rule-line{
-  flex:1;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(196,160,82,.45),transparent);
-  max-width:70px;
+.mob-div-line{
+  flex:1;height:1px;max-width:64px;
+  background:linear-gradient(90deg,transparent,rgba(196,160,82,.5),transparent);
 }
-.amb-rule-dot{
-  width:4px;height:4px;border-radius:50%;
-  background:rgba(196,160,82,.55);
-}
-
-/* Hero content block */
-.amb-hero{
-  position:relative;z-index:10;
+.mob-div-dot{width:3px;height:3px;border-radius:50%;background:rgba(196,160,82,.6);}
+.mob-hero{
+  position:relative;z-index:5;
   flex:1;display:flex;flex-direction:column;
   align-items:center;justify-content:flex-end;
-  padding:0 28px 36px;
+  padding:0 28px 40px;
   text-align:center;
 }
-
-.amb-eyebrow{
-  font-family:var(--font-sans);
+.mob-eyebrow{
   font-size:9px;letter-spacing:4px;text-transform:uppercase;
-  color:rgba(196,160,82,.8);font-weight:600;
-  margin-bottom:14px;
-  opacity:0;animation:fadeUp .6s .2s forwards;
+  color:rgba(196,160,82,.85);font-weight:600;margin-bottom:12px;
 }
-
-.amb-brand-name{
+.mob-title{
   font-family:'Playfair Display',Georgia,serif;
-  font-size:clamp(52px,14vw,72px);
-  font-weight:400;
-  color:#fff;
-  letter-spacing:10px;
-  line-height:1;
-  margin-bottom:6px;
-  text-shadow:0 2px 40px rgba(0,0,0,.5);
-  opacity:0;animation:fadeUp .6s .35s forwards;
+  font-size:clamp(54px,15vw,72px);font-weight:400;
+  color:#fff;letter-spacing:10px;line-height:1;
+  margin-bottom:6px;text-shadow:0 2px 40px rgba(0,0,0,.5);
 }
-
-.amb-tagline{
+.mob-sub{
   font-family:'Playfair Display',Georgia,serif;
-  font-style:italic;
-  font-size:clamp(14px,3.8vw,18px);
-  color:rgba(255,255,255,.55);
-  letter-spacing:1px;
-  margin-bottom:32px;
-  opacity:0;animation:fadeUp .6s .5s forwards;
+  font-style:italic;font-size:clamp(14px,4vw,18px);
+  color:rgba(255,255,255,.5);letter-spacing:1px;margin-bottom:30px;
 }
-
-/* Divider ornament */
-.amb-ornament{
-  display:flex;align-items:center;gap:10px;
-  margin-bottom:32px;
-  opacity:0;animation:fadeUp .6s .6s forwards;
-}
-.amb-orn-line{width:36px;height:1px;background:rgba(196,160,82,.4);}
-.amb-orn-diamond{
-  width:5px;height:5px;
-  background:rgba(196,160,82,.6);
-  transform:rotate(45deg);
-}
-
-/* Action buttons container */
-.amb-actions{
-  width:100%;max-width:360px;
-  display:flex;flex-direction:column;gap:12px;
-  margin-bottom:28px;
-  opacity:0;animation:fadeUp .6s .7s forwards;
-}
-
-/* Primary CTA */
-.amb-btn-primary{
-  width:100%;padding:16px 24px;
-  background:linear-gradient(135deg,#C4A052 0%,#B8960C 50%,#A88808 100%);
-  border:none;cursor:pointer;
+.mob-orn{display:flex;align-items:center;gap:10px;margin-bottom:30px;}
+.mob-orn-line{width:32px;height:1px;background:rgba(196,160,82,.4);}
+.mob-orn-sq{width:5px;height:5px;background:rgba(196,160,82,.55);transform:rotate(45deg);}
+.mob-btns{width:100%;max-width:360px;display:flex;flex-direction:column;gap:11px;margin-bottom:24px;}
+.mob-btn-a{
+  width:100%;padding:17px 24px;border:none;cursor:pointer;
   font-family:var(--font-sans);font-size:10px;font-weight:700;
   letter-spacing:3px;text-transform:uppercase;color:#fff;
+  background:linear-gradient(135deg,#C4A052,#B8960C,#9A7A08);
   display:flex;align-items:center;justify-content:center;gap:10px;
-  transition:all .28s cubic-bezier(.4,0,.2,1);
-  position:relative;overflow:hidden;
-  box-shadow:0 4px 24px rgba(184,150,12,.35);
+  box-shadow:0 4px 20px rgba(184,150,12,.4);
+  -webkit-tap-highlight-color:transparent;
 }
-.amb-btn-primary::before{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(255,255,255,.12) 0%,transparent 60%);
-  pointer-events:none;
-}
-.amb-btn-primary:active{transform:scale(.98);box-shadow:0 2px 12px rgba(184,150,12,.25);}
-.amb-btn-primary svg{width:14px;height:14px;stroke:rgba(255,255,255,.9);fill:none;stroke-width:2;flex-shrink:0;}
-
-/* Secondary CTA */
-.amb-btn-secondary{
-  width:100%;padding:15px 24px;
-  background:transparent;
-  border:1px solid rgba(255,255,255,.2);
-  cursor:pointer;
+.mob-btn-a:active{opacity:.85;}
+.mob-btn-a svg{width:14px;height:14px;stroke:rgba(255,255,255,.9);fill:none;stroke-width:2;}
+.mob-btn-b{
+  width:100%;padding:16px 24px;border:1px solid rgba(255,255,255,.22);cursor:pointer;
   font-family:var(--font-sans);font-size:10px;font-weight:600;
-  letter-spacing:3px;text-transform:uppercase;
-  color:rgba(255,255,255,.7);
+  letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.75);
+  background:rgba(255,255,255,.05);
   display:flex;align-items:center;justify-content:center;gap:10px;
-  transition:all .28s cubic-bezier(.4,0,.2,1);
-  backdrop-filter:blur(6px);
-  background:rgba(255,255,255,.04);
+  -webkit-tap-highlight-color:transparent;
 }
-.amb-btn-secondary:active{background:rgba(255,255,255,.08);}
-.amb-btn-secondary svg{width:13px;height:13px;stroke:rgba(255,255,255,.6);fill:none;stroke-width:2;flex-shrink:0;}
-
-/* Trust badges strip */
-.amb-trust{
+.mob-btn-b:active{background:rgba(255,255,255,.12);}
+.mob-btn-b svg{width:13px;height:13px;stroke:rgba(255,255,255,.65);fill:none;stroke-width:2;}
+.mob-footer{
+  position:relative;z-index:5;
   display:flex;align-items:center;justify-content:center;gap:6px;
-  opacity:0;animation:fadeUp .6s .85s forwards;
-  padding-bottom:env(safe-area-inset-bottom, 0px);
+  padding-bottom:max(24px, env(safe-area-inset-bottom));
+  padding-bottom:max(24px, constant(safe-area-inset-bottom));
 }
-.amb-trust-item{
-  font-size:8.5px;letter-spacing:1.5px;text-transform:uppercase;
-  color:rgba(255,255,255,.28);font-weight:500;
-  white-space:nowrap;
-}
-.amb-trust-sep{
-  width:2px;height:2px;border-radius:50%;
-  background:rgba(255,255,255,.18);
-  flex-shrink:0;
-}
+.mob-ft-item{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.25);font-weight:500;}
+.mob-ft-dot{width:2px;height:2px;border-radius:50%;background:rgba(255,255,255,.2);}
 
-/* Animations */
-@keyframes fadeUp{
-  from{opacity:0;transform:translateY(18px);}
-  to{opacity:1;transform:translateY(0);}
-}
-
-/* MOBILE ACCESS BUTTONS (legacy — hidden in new design) */
-.access-mode-btns{
-  display:none;flex-direction:column;gap:10px;margin-bottom:28px;
-}
-.amob-btn{
-  width:100%;padding:14px;border:none;cursor:pointer;
-  font-family:var(--font-sans);font-size:10px;font-weight:600;
-  letter-spacing:2.5px;text-transform:uppercase;
-  display:flex;align-items:center;justify-content:center;gap:9px;
-  transition:var(--trans);
-}
-.amob-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;}
-.amob-btn.client-btn{background:var(--dark);color:#fff;}
-.amob-btn.client-btn:hover{background:var(--dark3);}
-.amob-btn.personal-btn{background:transparent;border:1.5px solid var(--border);color:var(--text-md);}
-.amob-btn.personal-btn:hover{border-color:var(--gold-bdr);color:var(--gold-dk);}
-/* Desktop: personal form always visible in right panel */
-.personal-form-section{display:block;}
-
+/* ── PERSONAL FORM FULLSCREEN OVERLAY (mobile) ── */
+#personal-form-section{display:block;}
 @media(max-width:900px){
-  /* Hide the old right panel — mobile uses fullscreen banner */
-  .access-right{display:none!important;}
-
-  /* Personal form becomes fullscreen overlay on mobile */
   #personal-form-section{
-    display:none!important;
-    position:fixed;inset:0;z-index:2000;
+    display:none;
+    position:fixed;inset:0;z-index:3000;
     background:var(--bg);
     flex-direction:column;
     overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
   }
-  #personal-form-section.mobile-open{
-    display:flex!important;
-  }
+  #personal-form-section.is-open{display:flex;}
   .access-form-wrap{
     flex:1;display:flex;flex-direction:column;justify-content:center;
-    padding:72px 32px 48px;
-    max-width:100%;
-    position:relative;
+    padding:80px 32px 48px;max-width:100%;position:relative;
   }
-  #back-to-modes{
-    display:none;
+  #btn-back-mobile{
     position:absolute;top:20px;left:24px;
-    align-items:center;gap:6px;
+    display:flex;align-items:center;gap:6px;
     background:none;border:none;
     color:var(--text-lt);font-size:10px;
     letter-spacing:1.5px;text-transform:uppercase;
-    cursor:pointer;font-family:var(--font-sans);font-weight:600;padding:8px 0;
-  }
-  #personal-form-section.mobile-open #back-to-modes{
-    display:flex;
+    cursor:pointer;font-family:var(--font-sans);font-weight:600;
+    padding:8px 0;
+    -webkit-tap-highlight-color:transparent;
   }
 }
 </style>
@@ -924,7 +810,8 @@ img{display:block;}
      ACCESS SCREEN
 ════════════════════════════════════════ -->
 <div id="access-screen">
-  <!-- LEFT (desktop only): photo + client access -->
+
+  <!-- ── DESKTOP LEFT (photo + client btn) ── -->
   <div class="access-left">
     <div class="access-left-bg" id="access-left-bg"></div>
     <div class="access-left-gradient"></div>
@@ -944,125 +831,127 @@ img{display:block;}
     </div>
   </div>
 
-  <!-- MOBILE BANNER — PREMIUM FULLSCREEN (hidden on desktop) -->
-  <div class="access-mobile-banner" id="access-mobile-banner">
-    <!-- Background image -->
-    <div class="amb-empty" id="amb-empty">
-      <span class="amb-empty-icon">🖼</span>
-      <span class="amb-empty-txt">Sin imagen de banner</span>
-    </div>
-    <img class="amb-img" id="amb-img"
-      src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&q=80"
-      alt="SURKO Gourmet" style="display:block;"
-      onerror="this.style.display='none';document.getElementById('amb-empty').style.display='none';">
-    <!-- Gradient overlays -->
-    <div class="amb-overlay"></div>
-    <div class="amb-overlay-top"></div>
+  <!-- ── MOBILE FULLSCREEN (hidden on desktop via CSS) ── -->
+  <div class="mob-screen" id="mob-screen">
+    <!-- BG image -->
+    <img class="mob-bg-img" id="mob-bg-img"
+      src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=900&q=80"
+      alt="" onerror="this.style.opacity=0">
+    <div class="mob-bg-dark"></div>
 
-    <!-- Top bar with centered logo -->
-    <div class="amb-topbar">
-      <svg viewBox="0 0 220 32" xmlns="http://www.w3.org/2000/svg" style="height:22px;">
-        <line x1="0" y1="16" x2="36" y2="16" stroke="#C4A052" stroke-width="0.7" opacity="0.6"/>
-        <ellipse cx="40" cy="16" rx="3.5" ry="1.6" fill="#C4A052" opacity="0.7" transform="rotate(-8 40 16)"/>
-        <text x="110" y="22" font-family="'Playfair Display',Georgia,serif" font-size="19" font-weight="400" fill="#FFFFFF" text-anchor="middle" letter-spacing="8" opacity="0.95">SURKO</text>
-        <ellipse cx="180" cy="16" rx="3.5" ry="1.6" fill="#C4A052" opacity="0.7" transform="rotate(8 180 16)"/>
-        <line x1="184" y1="16" x2="220" y2="16" stroke="#C4A052" stroke-width="0.7" opacity="0.6"/>
+    <!-- Logo -->
+    <div class="mob-topbar">
+      <svg viewBox="0 0 220 32" xmlns="http://www.w3.org/2000/svg" style="height:24px;width:auto;">
+        <line x1="0" y1="16" x2="36" y2="16" stroke="#C4A052" stroke-width="0.7" opacity="0.55"/>
+        <ellipse cx="40" cy="16" rx="3.5" ry="1.6" fill="#C4A052" opacity="0.65" transform="rotate(-8 40 16)"/>
+        <text x="110" y="23" font-family="'Playfair Display',Georgia,serif" font-size="20" font-weight="400" fill="#FFFFFF" text-anchor="middle" letter-spacing="8" opacity="0.95">SURKO</text>
+        <ellipse cx="180" cy="16" rx="3.5" ry="1.6" fill="#C4A052" opacity="0.65" transform="rotate(8 180 16)"/>
+        <line x1="184" y1="16" x2="220" y2="16" stroke="#C4A052" stroke-width="0.7" opacity="0.55"/>
       </svg>
     </div>
 
-    <!-- Decorative rule -->
-    <div class="amb-rule">
-      <div class="amb-rule-line"></div>
-      <div class="amb-rule-dot"></div>
-      <div class="amb-rule-line"></div>
+    <!-- Decorative divider -->
+    <div class="mob-divider">
+      <div class="mob-div-line"></div>
+      <div class="mob-div-dot"></div>
+      <div class="mob-div-line"></div>
     </div>
 
-    <!-- Hero text & CTAs -->
-    <div class="amb-hero">
-      <div class="amb-eyebrow">Repostería &amp; Cocina Artesanal</div>
-      <div class="amb-brand-name">Surko</div>
-      <div class="amb-tagline">Gourmet Experience</div>
-
-      <div class="amb-ornament">
-        <div class="amb-orn-line"></div>
-        <div class="amb-orn-diamond"></div>
-        <div class="amb-orn-line"></div>
+    <!-- Hero content + buttons -->
+    <div class="mob-hero">
+      <div class="mob-eyebrow">Repostería &amp; Cocina Artesanal</div>
+      <div class="mob-title">Surko</div>
+      <div class="mob-sub">Gourmet Experience</div>
+      <div class="mob-orn">
+        <div class="mob-orn-line"></div>
+        <div class="mob-orn-sq"></div>
+        <div class="mob-orn-line"></div>
       </div>
-
-      <div class="amb-actions">
-        <button class="amb-btn-primary" onclick="enterClient()">
+      <div class="mob-btns">
+        <button class="mob-btn-a" onclick="enterClient()">
           <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           Ingresar como Cliente
         </button>
-        <button class="amb-btn-secondary" onclick="showPersonalForm()">
+        <button class="mob-btn-b" onclick="openPersonalForm()">
           <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           Acceso Personal
         </button>
       </div>
-
-      <div class="amb-trust">
-        <span class="amb-trust-item">Artesanal</span>
-        <span class="amb-trust-sep"></span>
-        <span class="amb-trust-item">Premium</span>
-        <span class="amb-trust-sep"></span>
-        <span class="amb-trust-item">Rosario</span>
+      <div class="mob-footer">
+        <span class="mob-ft-item">Artesanal</span>
+        <span class="mob-ft-dot"></span>
+        <span class="mob-ft-item">Premium</span>
+        <span class="mob-ft-dot"></span>
+        <span class="mob-ft-item">Rosario</span>
       </div>
     </div>
   </div>
 
-  <!-- RIGHT: login + mobile buttons -->
+  <!-- ── DESKTOP RIGHT (admin login) ── -->
   <div class="access-right">
     <div class="access-right-top">
       <span class="access-meta">EST. 2024</span>
       <span class="access-meta">GOURMET EXPERIENCE</span>
     </div>
     <div class="access-right-inner">
-      <!-- MOBILE: 2 mode buttons -->
-      <div class="access-mode-btns" id="access-mode-btns">
-        <button class="amob-btn client-btn" onclick="enterClient()">
-          <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-          Ingresar como Cliente
-        </button>
-        <button class="amob-btn personal-btn" onclick="showPersonalForm()">
-          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          Acceso Personal
-        </button>
-      </div>
-
-      <!-- PERSONAL FORM (always visible desktop, toggleable mobile) -->
-      <div class="personal-form-section" id="personal-form-section">
-        <div class="access-form-wrap">
-          <div class="access-section-tag">Personal</div>
-          <h1 class="access-form-title">Panel Administrativo</h1>
-          <p class="access-form-sub">Acceso restringido para el equipo de SURKO.</p>
-          <div class="afield">
-            <label>Contraseña</label>
-            <div style="position:relative;display:flex;align-items:center;">
-              <input type="password" id="pwd-input" placeholder="••••••••"
-                style="width:100%;padding-right:44px;"
-                onkeydown="if(event.key==='Enter')checkPassword()">
-              <button onclick="togglePwd()" style="position:absolute;right:12px;background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-lt);padding:4px;" id="pwd-eye">👁</button>
-            </div>
-            <span class="pwd-err-msg" id="pwd-err">Contraseña incorrecta. Intentá de nuevo.</span>
+      <div class="access-form-wrap">
+        <div class="access-section-tag">Personal</div>
+        <h1 class="access-form-title">Panel Administrativo</h1>
+        <p class="access-form-sub">Acceso restringido para el equipo de SURKO.</p>
+        <div class="afield">
+          <label>Contraseña</label>
+          <div style="position:relative;display:flex;align-items:center;">
+            <input type="password" id="pwd-input" placeholder="••••••••"
+              style="width:100%;padding-right:44px;"
+              onkeydown="if(event.key==='Enter')checkPassword()">
+            <button onclick="togglePwd()" style="position:absolute;right:12px;background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-lt);padding:4px;" id="pwd-eye">👁</button>
           </div>
-          <div class="afield-row">
-            <label class="afield-check"><input type="checkbox"> Recordarme</label>
-            <a class="afield-forgot" href="#">¿Olvidó su clave?</a>
-          </div>
-          <button class="access-submit" onclick="checkPassword()">
-            Iniciar Sesión
-            <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-          </button>
-          <!-- back to mode selection on mobile -->
-          <button id="back-to-modes" onclick="hidePersonalForm()" style="display:none;margin-top:12px;background:none;border:none;color:var(--text-lt);font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:var(--font-sans);font-weight:500;padding:4px 0;">← Volver</button>
+          <span class="pwd-err-msg" id="pwd-err">Contraseña incorrecta. Intentá de nuevo.</span>
         </div>
+        <div class="afield-row">
+          <label class="afield-check"><input type="checkbox"> Recordarme</label>
+          <a class="afield-forgot" href="#">¿Olvidó su clave?</a>
+        </div>
+        <button class="access-submit" onclick="checkPassword()">
+          Iniciar Sesión
+          <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        </button>
       </div>
     </div>
     <div class="access-right-foot">© 2024 SURKO Gourmet. Gestión de Calidad Superior.</div>
   </div>
+
+</div>
+
+<!-- ── PERSONAL FORM MOBILE OVERLAY ── -->
+<div id="personal-form-section">
+  <div class="access-form-wrap">
+    <button id="btn-back-mobile" onclick="closePersonalForm()">← Volver</button>
+    <div class="access-section-tag">Personal</div>
+    <h1 class="access-form-title">Panel Administrativo</h1>
+    <p class="access-form-sub">Acceso restringido para el equipo de SURKO.</p>
+    <div class="afield">
+      <label>Contraseña</label>
+      <div style="position:relative;display:flex;align-items:center;">
+        <input type="password" id="pwd-input-mob" placeholder="••••••••"
+          style="width:100%;padding-right:44px;"
+          onkeydown="if(event.key==='Enter')checkPasswordMob()">
+        <button onclick="togglePwdMob()" style="position:absolute;right:12px;background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-lt);padding:4px;">👁</button>
+      </div>
+      <span class="pwd-err-msg" id="pwd-err-mob">Contraseña incorrecta. Intentá de nuevo.</span>
+    </div>
+    <div class="afield-row">
+      <label class="afield-check"><input type="checkbox"> Recordarme</label>
+    </div>
+    <button class="access-submit" onclick="checkPasswordMob()">
+      Iniciar Sesión
+      <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+    </button>
+  </div>
 </div>
 
 <!-- ════════════════════════════════════════
+     CLIENT MODE<!-- ════════════════════════════════════════
      CLIENT MODE
 ════════════════════════════════════════ -->
 <div id="client-mode">
@@ -1600,45 +1489,43 @@ function applyTheme(dark){
 function toggleTheme(){const d=document.documentElement.getAttribute('data-theme')==='dark';LS.set('theme',d?'light':'dark');applyTheme(!d);}
 applyTheme(LS.get('theme')==='dark');
 
-// MOBILE ACCESS
-function showPersonalForm(){
-  const isMobile=window.innerWidth<=900;
-  if(isMobile){
-    const pfs=document.getElementById('personal-form-section');
-    pfs.classList.add('mobile-open');
-    document.getElementById('back-to-modes').style.display='flex';
-    setTimeout(()=>document.getElementById('pwd-input').focus(),80);
+// ── MOBILE ACCESS FORM ──
+function openPersonalForm(){
+  var pf = document.getElementById('personal-form-section');
+  pf.classList.add('is-open');
+  setTimeout(function(){ document.getElementById('pwd-input-mob').focus(); }, 80);
+}
+function closePersonalForm(){
+  document.getElementById('personal-form-section').classList.remove('is-open');
+}
+function togglePwdMob(){
+  var i = document.getElementById('pwd-input-mob');
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+function checkPasswordMob(){
+  var v = document.getElementById('pwd-input-mob').value;
+  var err = document.getElementById('pwd-err-mob');
+  if(v === 'Novi2800'){
+    err.style.display = 'none';
+    document.getElementById('pwd-input-mob').value = '';
+    closePersonalForm();
+    var as = document.getElementById('access-screen');
+    as.style.cssText = 'opacity:0;transition:opacity .28s ease;';
+    setTimeout(function(){
+      as.style.display = 'none';
+      document.getElementById('personal-mode').style.display = 'flex';
+      initAdminDashboard(); loadConfig();
+    }, 280);
   } else {
-    document.getElementById('access-mode-btns').style.display='none';
-    document.getElementById('personal-form-section').style.display='block';
-    document.getElementById('back-to-modes').style.display='block';
-    setTimeout(()=>document.getElementById('pwd-input').focus(),80);
+    err.style.display = 'block';
+    document.getElementById('pwd-input-mob').value = '';
   }
 }
-function hidePersonalForm(){
-  const isMobile=window.innerWidth<=900;
-  if(isMobile){
-    const pfs=document.getElementById('personal-form-section');
-    pfs.classList.remove('mobile-open');
-    document.getElementById('back-to-modes').style.display='none';
-  } else {
-    document.getElementById('access-mode-btns').style.display='flex';
-    document.getElementById('personal-form-section').style.display='none';
-    document.getElementById('back-to-modes').style.display='none';
-  }
-}
-function initAccessLayout(){
-  const m=window.innerWidth<=900;
-  const pfs=document.getElementById('personal-form-section');
-  if(m){
-    pfs.classList.remove('mobile-open');
-  } else {
-    // Desktop: show form, hide mobile mode buttons
-    pfs.style.display='block';
-  }
-}
-initAccessLayout();
-window.addEventListener('resize',initAccessLayout);
+// Legacy functions (desktop still uses these)
+function showPersonalForm(){ openPersonalForm(); }
+function hidePersonalForm(){ closePersonalForm(); }
+function initAccessLayout(){}
+window.addEventListener('resize', function(){});
 
 // BANNER IMAGE
 let pendingBannerImg=null;
@@ -1650,11 +1537,13 @@ function compressImage(dataUrl,maxWidth=800,quality=0.75){return new Promise((re
 function saveBannerImg(){if(!pendingBannerImg)return;compressImage(pendingBannerImg,800,0.75).then(compressed=>{LS.set('banner_img',compressed);applyBannerImg(compressed);pendingBannerImg=null;document.getElementById('save-banner-img-btn').style.display='none';showToast('✓ Imagen guardada','success');});}
 function removeBannerImg(){LS.set('banner_img',null);pendingBannerImg=null;applyBannerImg(null);updateBannerAdminPreview(null);document.getElementById('save-banner-img-btn').style.display='none';document.getElementById('remove-banner-img-btn').style.display='none';showToast('Imagen eliminada','');}
 function applyBannerImg(src){
-  const lb=document.getElementById('access-left-bg');
-  if(lb){if(src){lb.style.backgroundImage=`url('${src}')`;lb.style.backgroundSize='cover';lb.style.backgroundPosition='center';lb.style.opacity='.8';}else{lb.style.backgroundImage="url('https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&q=80')";lb.style.opacity='.55';}}
-  const mImg=document.getElementById('amb-img');const mEmpty=document.getElementById('amb-empty');
-  if(mImg&&mEmpty){if(src){mImg.src=src;mImg.style.display='block';mEmpty.style.display='none';}else{// Keep default Unsplash image visible, hide empty state
-    mImg.style.display='block';mEmpty.style.display='none';}}}
+  try{
+    var lb=document.getElementById('access-left-bg');
+    if(lb){if(src){lb.style.backgroundImage="url('"+src+"')";lb.style.backgroundSize='cover';lb.style.backgroundPosition='center';lb.style.opacity='.8';}else{lb.style.backgroundImage="url('https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&q=80')";lb.style.opacity='.55';}}
+    var mImg=document.getElementById('mob-bg-img');
+    if(mImg&&src){mImg.src=src;}
+  }catch(e){}
+}
 // Load saved banner
 (()=>{const s=LS.get('banner_img');if(s){applyBannerImg(s);setTimeout(()=>{updateBannerAdminPreview(s);const rb=document.getElementById('remove-banner-img-btn');if(rb)rb.style.display='block';},100);}})();
 
