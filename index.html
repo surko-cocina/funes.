@@ -140,7 +140,7 @@ input,select,textarea{font-size:16px!important;} /* prevent iOS zoom */
 .amb-empty-txt{font-size:10px;color:var(--text-lt);letter-spacing:1.5px;text-transform:uppercase;}
 
 /* Mobile mode buttons */
-.access-mode-btns{display:none;flex-direction:column;gap:10px;margin-bottom:24px;}
+.access-mode-btns{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;width:100%;max-width:420px;margin-left:auto;margin-right:auto;}
 .amob-btn{
   width:100%;padding:16px;border:none;cursor:pointer;
   font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
@@ -148,9 +148,14 @@ input,select,textarea{font-size:16px!important;} /* prevent iOS zoom */
   transition:var(--trans);min-height:52px;
 }
 .amob-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;}
-.amob-btn.client-btn{background:var(--dark);color:#fff;}
-.amob-btn.personal-btn{background:transparent;border:1.5px solid var(--border);color:var(--text-md);}
-.personal-form-section{display:block;}
+.amob-btn.client-btn{background:var(--dark);color:#fff;width:100%;justify-content:center;}
+.amob-btn.personal-btn{display:none!important;}
+.personal-form-section{display:none;max-width:420px;width:100%;margin:0 auto;}
+.access-right-inner{display:flex;flex-direction:column;justify-content:center;align-items:center;}
+.access-mode-btns .client-btn{border-radius:20px;min-height:60px;box-shadow:var(--shadow);}
+.personal-access-fab{position:fixed;right:16px;bottom:16px;z-index:1400;width:36px;height:36px;border:none;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(10,10,10,.72);color:#fff;opacity:.35;cursor:pointer;transition:opacity .2s ease, transform .2s ease;background-clip:padding-box;}
+.personal-access-fab:hover,.personal-access-fab:focus-visible{opacity:.7;transform:scale(1.04);outline:none;}
+.personal-access-fab svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;}
 
 /* ══ CLIENT MODE ════════════════════════════════════════════════════ */
 #client-mode{display:none;min-height:100vh;background:var(--bg);}
@@ -821,11 +826,11 @@ textarea::placeholder{
   .access-right{width:100%;padding:0;background:transparent;flex:1;min-height:auto;display:flex;flex-direction:column;justify-content:flex-start;}
   .access-right-top{display:none;}
   .access-right-inner{padding:0 14px 18px;flex:1;display:flex;flex-direction:column;margin-top:-34px;position:relative;z-index:3;}
-  .access-mode-btns{display:flex;gap:10px;margin-bottom:14px;}
+  .access-mode-btns{display:flex;gap:10px;margin-bottom:14px;width:100%;max-width:none;}
   .amob-btn{border-radius:18px;min-height:56px;box-shadow:var(--shadow-sm);}
   .amob-btn.client-btn{background:var(--dark);}
   .amob-btn.personal-btn{background:var(--bg2);}
-  .personal-form-section{display:none;background:var(--bg2);border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow);padding:20px 16px 16px;}
+  .personal-form-section{display:none;background:var(--bg2);border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow);padding:20px 16px 16px;width:100%;max-width:none;}
   .access-form-wrap{max-width:100%;}
   .access-right-foot{padding:16px 20px 20px;border-top:none;font-size:9px;}
   .c-header{
@@ -924,6 +929,113 @@ textarea::placeholder{
   .pcard-price{font-size:18px;}
 }
 
+
+/* Desktop-only adjustment: image occupies full viewport; right panel overlays on top */
+@media (min-width: 1024px) {
+  body.landing-page .landing-shell,
+  body .landing-shell {
+    position: relative !important;
+    display: block !important;
+    min-height: 100vh !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+  }
+
+  body.landing-page .landing-visual,
+  body .landing-visual,
+  body.landing-page .hero-media,
+  body .hero-media,
+  body.landing-page .landing-image,
+  body .landing-image {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    flex: none !important;
+  }
+
+  body.landing-page .landing-visual img,
+  body .landing-visual img,
+  body.landing-page .hero-media img,
+  body .hero-media img,
+  body.landing-page .landing-image img,
+  body .landing-image img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
+  body.landing-page .landing-panel,
+  body .landing-panel,
+  body.landing-page .landing-content,
+  body .landing-content,
+  body.landing-page .hero-content,
+  body .hero-content,
+  body.landing-page .entry-panel,
+  body .entry-panel {
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: min(36vw, 650px) !important;
+    min-width: 430px !important;
+    height: 100vh !important;
+    z-index: 5 !important;
+    background: rgba(245, 243, 239, 0.96) !important;
+    backdrop-filter: blur(4px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+  }
+
+  /* Keep only the client CTA visually dominant */
+  #clientAccessBtn,
+  .client-access-btn,
+  a[href*="cliente"],
+  a[href*="client"] {
+    width: calc(100% - 64px) !important;
+    margin: 0 auto !important;
+  }
+
+  /* Desktop hidden admin icon */
+  #personalAccessFab,
+  .personal-access-fab,
+  #personalAccessIcon,
+  .personal-access-icon {
+    cursor: pointer !important;
+    transition: opacity 0.2s ease, transform 0.2s ease !important;
+  }
+
+  /* Expand-on-click state */
+  #personalAccessFab.is-open,
+  .personal-access-fab.is-open,
+  #personalAccessIcon.is-open,
+  .personal-access-icon.is-open {
+    width: auto !important;
+    min-width: 148px !important;
+    height: 44px !important;
+    border-radius: 999px !important;
+    padding: 0 14px !important;
+    opacity: 0.92 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  #personalAccessFab.is-open::after,
+  .personal-access-fab.is-open::after,
+  #personalAccessIcon.is-open::after,
+  .personal-access-icon.is-open::after {
+    content: 'Acceso personal' !important;
+    font-size: 12px !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    color: #ffffff !important;
+  }
+}
+
 </style>
 
   <link rel="icon" type="image/png" sizes="192x192" href="surko-icon-192.png" />
@@ -1005,10 +1117,6 @@ textarea::placeholder{
           <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           <span id="mob-client-btn-text">Ingresar como Cliente</span>
         </button>
-        <button class="amob-btn personal-btn" onclick="showPersonalForm()">
-          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          Acceso Personal
-        </button>
       </div>
 
       <!-- Login form -->
@@ -1042,6 +1150,9 @@ textarea::placeholder{
     <div class="access-right-foot">© 2024 SURKO Gourmet. Gestión de Calidad Superior.</div>
   </div>
 </div>
+  <button class="personal-access-fab" id="personal-access-fab" type="button" aria-label="Acceso personal" onclick="showPersonalForm()">
+    <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" ry="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+  </button>
 
 <!-- ══ CLIENT MODE ════════════════════════════════════════════════════ -->
 <div id="client-mode">
@@ -2020,9 +2131,31 @@ function toggleTheme(){const d=document.documentElement.getAttribute('data-theme
 applyTheme(LS.get('theme')==='dark');
 
 // MOBILE ACCESS
-function showPersonalForm(){document.getElementById('access-mode-btns').style.display='none';document.getElementById('personal-form-section').style.display='block';document.getElementById('back-to-modes').style.display='block';setTimeout(()=>document.getElementById('pwd-input').focus(),80);}
-function hidePersonalForm(){document.getElementById('access-mode-btns').style.display='flex';document.getElementById('personal-form-section').style.display='none';document.getElementById('back-to-modes').style.display='none';}
-function initAccessLayout(){const m=window.innerWidth<640;document.getElementById('access-mode-btns').style.display=m?'flex':'none';document.getElementById('personal-form-section').style.display=m?'none':'block';document.getElementById('back-to-modes').style.display='none';}
+function showPersonalForm(){
+  const modes=document.getElementById('access-mode-btns');
+  const form=document.getElementById('personal-form-section');
+  const back=document.getElementById('back-to-modes');
+  if(modes)modes.style.display='none';
+  if(form)form.style.display='block';
+  if(back)back.style.display='block';
+  setTimeout(()=>document.getElementById('pwd-input')?.focus(),80);
+}
+function hidePersonalForm(){
+  const modes=document.getElementById('access-mode-btns');
+  const form=document.getElementById('personal-form-section');
+  const back=document.getElementById('back-to-modes');
+  if(modes)modes.style.display='flex';
+  if(form)form.style.display='none';
+  if(back)back.style.display='none';
+}
+function initAccessLayout(){
+  const modes=document.getElementById('access-mode-btns');
+  const form=document.getElementById('personal-form-section');
+  const back=document.getElementById('back-to-modes');
+  if(modes)modes.style.display='flex';
+  if(form)form.style.display='none';
+  if(back)back.style.display='none';
+}
 initAccessLayout();
 window.addEventListener('resize',initAccessLayout);
 
@@ -2862,5 +2995,78 @@ window.__syncDb=null;
 .cart-subtotal-original { text-decoration: line-through; color: var(--text-lt); font-size: .82rem; margin-right: .35rem; }
 .cart-subtotal-discount { color: #10B981; font-weight: 700; }
 </style>
+
+<script>
+(function () {
+  function isDesktop() {
+    return window.matchMedia('(min-width: 1024px)').matches;
+  }
+
+  function initDesktopPersonalAccess() {
+    var lockBtn = document.getElementById('personalAccessFab') ||
+                  document.getElementById('personalAccessIcon') ||
+                  document.querySelector('.personal-access-fab') ||
+                  document.querySelector('.personal-access-icon');
+
+    var originalBtn = document.getElementById('personalAccessBtn') ||
+                      document.querySelector('[data-personal-access-trigger]') ||
+                      document.querySelector('.personal-access-trigger');
+
+    if (!lockBtn) return;
+
+    if (lockBtn.dataset.desktopBound === '1') return;
+    lockBtn.dataset.desktopBound = '1';
+
+    function openState() {
+      lockBtn.classList.add('is-open');
+      lockBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeState() {
+      lockBtn.classList.remove('is-open');
+      lockBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function triggerPersonalFlow() {
+      if (originalBtn) {
+        originalBtn.click();
+        return;
+      }
+      var href = lockBtn.getAttribute('data-target-href') || lockBtn.getAttribute('href');
+      if (href && href !== '#') {
+        window.location.href = href;
+      }
+    }
+
+    lockBtn.addEventListener('click', function (e) {
+      if (!isDesktop()) return;
+      if (!lockBtn.classList.contains('is-open')) {
+        e.preventDefault();
+        e.stopPropagation();
+        openState();
+        return;
+      }
+      triggerPersonalFlow();
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!isDesktop()) return;
+      if (!lockBtn.classList.contains('is-open')) return;
+      if (!lockBtn.contains(e.target)) closeState();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeState();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDesktopPersonalAccess);
+  } else {
+    initDesktopPersonalAccess();
+  }
+})();
+</script>
+
 </body>
 </html>
