@@ -2065,6 +2065,7 @@ function resolvePromoTargetByKey(products,key){
   return {scope:'category',targetValue:raw,name:raw};
 }
 function getCentralPromos(){
+  return [];
   const products=(LS.get('products')||DP);
   return Object.entries(PROMOS).map(([key,cfg],idx)=>{
     const target=resolvePromoTargetByKey(products,key);
