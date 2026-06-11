@@ -3129,18 +3129,19 @@ const DHERO={
   ]
 };
 
+function hasStoredKey(key){return localStorage.getItem('surko_'+key)!==null;}
 function initData(){
-  if(!LS.get('categories'))LS.set('categories',DC);
-  if(!LS.get('products'))LS.set('products',DP);
-  if(!LS.get('config'))LS.set('config',DCFG);
-  if(!LS.get('banner'))LS.set('banner',DBAN);
-  if(!LS.get('clients'))LS.set('clients',[]);
-  if(!LS.get('orders'))LS.set('orders',[]);
-  if(!LS.get('next_order_id'))LS.set('next_order_id',1);
-  if(!LS.get('ticket_template'))LS.set('ticket_template',DEFAULT_TICKET_TPL);
-  if(!LS.get('form_fields'))LS.set('form_fields',DEFAULT_FORM_FIELDS);
-  if(!LS.get('hero_content'))LS.set('hero_content',DHERO);
-  if(!LS.get(PROMOS_STORAGE_KEY))LS.set(PROMOS_STORAGE_KEY,DPRO);
+  if(!hasStoredKey('categories'))LS.set('categories',DC);
+  if(!hasStoredKey('products'))LS.set('products',DP);
+  if(!hasStoredKey('config'))LS.set('config',DCFG);
+  if(!hasStoredKey('banner'))LS.set('banner',DBAN);
+  if(!hasStoredKey('clients'))LS.set('clients',[]);
+  if(!hasStoredKey('orders'))LS.set('orders',[]);
+  if(!hasStoredKey('next_order_id'))LS.set('next_order_id',1);
+  if(!hasStoredKey('ticket_template'))LS.set('ticket_template',DEFAULT_TICKET_TPL);
+  if(!hasStoredKey('form_fields'))LS.set('form_fields',DEFAULT_FORM_FIELDS);
+  if(!hasStoredKey('hero_content'))LS.set('hero_content',DHERO);
+  if(!hasStoredKey(PROMOS_STORAGE_KEY))LS.set(PROMOS_STORAGE_KEY,DPRO);
 }
 initData();
 
@@ -3952,14 +3953,55 @@ function removeImg(i){currentProductImages.splice(i,1);renderImgPreviews();}
 
 // CATEGORIES
 function renderCategoriesAdmin(){
-  const cats=LS.get('categories')||DC;
-  document.getElementById('categories-list').innerHTML=cats.map(c=>`<div style="background:var(--bg2);padding:12px 16px;display:flex;align-items:center;gap:12px;"><span style="font-size:18px;">${c.emoji||'📦'}</span><div style="flex:1;"><div style="font-size:13px;font-weight:600;">${c.name}</div><div style="font-size:11px;color:var(--text-lt);">${(c.subs||[]).length?(c.subs||[]).join(', '):'Sin subcategorías'}</div></div><button class="tbl-btn" onclick="editCategory(${c.id})">Editar</button><button class="tbl-btn danger" onclick="deleteCategory(${c.id})">✕</button></div>`).join('');
+  const cats=Array.isArray(LS.get('categories'))?LS.get('categories'):DC;
+  const list=document.getElementById('categories-list');
+  if(!list)return;
+  if(!cats.length){list.innerHTML='<div style="background:var(--bg2);padding:16px;color:var(--text-lt);font-size:13px;">Sin categorías cargadas. Las categorías eliminadas no se restauran automáticamente.</div>';return;}
+  list.innerHTML=cats.map(c=>`<div style="background:var(--bg2);padding:12px 16px;display:flex;align-items:center;gap:12px;"><span style="font-size:18px;">${c.emoji||'📦'}</span><div style="flex:1;"><div style="font-size:13px;font-weight:600;">${escapeHtml(c.name||'Sin nombre')}</div><div style="font-size:11px;color:var(--text-lt);">${(c.subs||[]).length?(c.subs||[]).map(escapeHtml).join(', '):'Sin subcategorías'}</div></div><button class="tbl-btn" onclick="editCategory(${c.id})">Editar</button><button class="tbl-btn danger" onclick="deleteCategory(${c.id})">✕</button></div>`).join('');
 }
 function openCategoryForm(){document.getElementById('catf-id').value='';document.getElementById('catf-name').value='';document.getElementById('catf-emoji').value='';document.getElementById('catf-subs').value='';document.getElementById('cat-form-modal').classList.add('open');}
-function editCategory(id){const c=getCategories().find(x=>x.id===id);if(!c)return;document.getElementById('catf-id').value=c.id;document.getElementById('catf-name').value=c.name;document.getElementById('catf-emoji').value=c.emoji||'';document.getElementById('catf-subs').value=(c.subs||[]).join(', ');document.getElementById('cat-form-modal').classList.add('open');}
+function editCategory(id){const c=getCategories().find(x=>Number(x.id)===Number(id));if(!c)return;document.getElementById('catf-id').value=c.id;document.getElementById('catf-name').value=c.name;document.getElementById('catf-emoji').value=c.emoji||'';document.getElementById('catf-subs').value=(c.subs||[]).join(', ');document.getElementById('cat-form-modal').classList.add('open');}
 function closeCategoryForm(){document.getElementById('cat-form-modal').classList.remove('open');}
-function saveCategory(){const name=document.getElementById('catf-name').value.trim();if(!name){showToast('⚠ Nombre requerido','');return;}const cats=getCategories();const id=parseInt(document.getElementById('catf-id').value)||null;const data={name,emoji:document.getElementById('catf-emoji').value||'📦',subs:(document.getElementById('catf-subs').value||'').split(',').map(s=>s.trim()).filter(Boolean)};if(id){const idx=cats.findIndex(c=>c.id===id);if(idx>=0)cats[idx]={...cats[idx],...data};}else{data.id=Date.now();cats.push(data);}LS.set('categories',cats);closeCategoryForm();renderCategoriesAdmin();renderCategoryTabs();refreshProductSubcategoryOptions();showToast('✓ Categoría guardada','success');}
-function deleteCategory(id){if(!confirm('¿Eliminar categoría?'))return;LS.set('categories',(LS.get('categories')||DC).filter(c=>c.id!==id));renderCategoriesAdmin();showToast('Categoría eliminada','');}
+function saveCategory(){
+  const name=document.getElementById('catf-name').value.trim();
+  if(!name){showToast('⚠ Nombre requerido','');return;}
+  const cats=Array.isArray(LS.get('categories'))?LS.get('categories').map(normalizeCategory):[];
+  const id=parseInt(document.getElementById('catf-id').value)||null;
+  const oldCat=id?cats.find(c=>Number(c.id)===Number(id)):null;
+  const oldName=oldCat?oldCat.name:'';
+  const data={name,emoji:document.getElementById('catf-emoji').value||'📦',subs:(document.getElementById('catf-subs').value||'').split(',').map(s=>s.trim()).filter(Boolean)};
+  if(id){
+    const idx=cats.findIndex(c=>Number(c.id)===Number(id));
+    if(idx>=0)cats[idx]={...cats[idx],...data};
+  }else{
+    data.id=Date.now();
+    cats.push(data);
+  }
+  LS.set('categories',cats);
+  if(oldName&&oldName!==name){
+    const products=(Array.isArray(LS.get('products'))?LS.get('products'):[]).map(p=>p&&p.cat===oldName?{...p,cat:name}:p);
+    const promos=(Array.isArray(LS.get(PROMOS_STORAGE_KEY))?LS.get(PROMOS_STORAGE_KEY):[]).map(pr=>pr&&pr.scope==='category'&&pr.targetValue===oldName?{...pr,targetValue:name}:pr);
+    LS.set('products',products);
+    LS.set(PROMOS_STORAGE_KEY,promos);
+  }
+  closeCategoryForm();renderCategoriesAdmin();renderCategoryTabs();refreshProductSubcategoryOptions();refreshPromoTargetOptions();renderProductsTable();renderProducts();
+  showToast('✓ Categoría guardada','success');
+}
+function deleteCategory(id){
+  if(!confirm('¿Eliminar categoría?'))return;
+  const cats=Array.isArray(LS.get('categories'))?LS.get('categories').map(normalizeCategory):[];
+  const cat=cats.find(c=>Number(c.id)===Number(id));
+  const name=cat?cat.name:'';
+  LS.set('categories',cats.filter(c=>Number(c.id)!==Number(id)));
+  if(name){
+    const products=(Array.isArray(LS.get('products'))?LS.get('products'):[]).map(p=>p&&p.cat===name?{...p,cat:'',subcat:''}:p);
+    const promos=(Array.isArray(LS.get(PROMOS_STORAGE_KEY))?LS.get(PROMOS_STORAGE_KEY):[]).filter(pr=>!(pr&&pr.scope==='category'&&pr.targetValue===name));
+    LS.set('products',products);
+    LS.set(PROMOS_STORAGE_KEY,promos);
+  }
+  renderCategoriesAdmin();renderCategoryTabs();refreshProductSubcategoryOptions();refreshPromoTargetOptions();renderProductsTable();renderProducts();
+  showToast('Categoría eliminada','');
+}
 
 // PROMOS
 function refreshPromoTargetOptions(selected=''){const scope=document.getElementById('prf-scope').value;const sel=document.getElementById('prf-target');if(!sel)return;let options='<option value="">Todos</option>';if(scope==='product'){options=(LS.get('products')||DP).map(p=>`<option value="${p.id}"${String(p.id)===String(selected)?' selected':''}>${escapeHtml(p.name)}</option>`).join('');}if(scope==='category'){options=getCategories().map(c=>`<option value="${c.name}"${c.name===selected?' selected':''}>${escapeHtml(c.name)}</option>`).join('');}if(scope==='all'){options='<option value="">Toda la tienda</option>';}sel.innerHTML=options;}
@@ -4220,8 +4262,8 @@ function renderRecurringClients(clients){
 
 </script>
 
-<script defer src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
-<script defer src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
 <script>
 // ══════════════════════════════════════
 //  SURKO — Firebase Sync estable
@@ -4243,7 +4285,15 @@ window.__syncDb=null;
 window.__syncClientId=localStorage.getItem('surko_indexnuevo_sync_client_id')||('client_'+Date.now()+'_'+Math.random().toString(36).slice(2));
 localStorage.setItem('surko_indexnuevo_sync_client_id',window.__syncClientId);
 
-function initFirebaseSync(){
+function initFirebaseSync(attempt=0){
+  if(typeof firebase==='undefined'||!firebase.firestore){
+    if(attempt<40){setTimeout(()=>initFirebaseSync(attempt+1),150);return;}
+    window.__syncReady=false;
+    window.__syncDisabledReason='No se pudo cargar Firebase. Revisá conexión, dominios permitidos y scripts externos.';
+    if(typeof window.updateSyncBadges==='function')window.updateSyncBadges();
+    console.log('Firebase sync desactivado: SDK no disponible.');
+    return;
+  }
   try{
     const hasFirebaseConfig=firebaseConfig&&firebaseConfig.apiKey&&!String(firebaseConfig.apiKey).startsWith('REEMPLAZAR_')&&firebaseConfig.projectId&&!String(firebaseConfig.projectId).startsWith('REEMPLAZAR_')&&firebaseConfig.appId&&!String(firebaseConfig.appId).startsWith('REEMPLAZAR_');
     if(!hasFirebaseConfig){
@@ -4305,10 +4355,12 @@ function initFirebaseSync(){
     function shouldKeepLocalByContent(key,local,remote){
       if(local===null||typeof local==='undefined')return false;
       if(remote===null||typeof remote==='undefined')return true;
+      if(isDefaultValue(key,local)&&!isDefaultValue(key,remote))return false;
+      if(Array.isArray(remote)&&remote.length===0&&isDefaultValue(key,local))return false;
       if(key==='next_order_id')return Number(local||0)>Number(remote||0);
       const ls=valueScore(key,local), rs=valueScore(key,remote);
-      if(ls>rs+1)return true;
       if(isDefaultValue(key,remote)&&!isDefaultValue(key,local))return true;
+      if(ls>rs+1&&!isDefaultValue(key,local))return true;
       return false;
     }
     function callSafe(name,args){
@@ -4503,9 +4555,10 @@ function initFirebaseSync(){
     }
 
     window.forcePushLocalDataToFirebase=function(){
-      syncKeys.forEach(k=>{if(!getLocalStamp(k))markLocalChange(k);});
+      syncKeys.forEach(k=>{markLocalChange(k);});
       return Promise.all(syncKeys.map(pushKey));
     };
+    window.syncNow=function(){return window.forcePushLocalDataToFirebase();};
     window.forcePullFirebaseData=function(){
       return Promise.all(syncKeys.map(async key=>{
         const snap=await docRef(key).get();
