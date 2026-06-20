@@ -15,7 +15,7 @@
 <meta property="og:site_name" content="SURKO">
 <meta property="og:title" content="SURKO">
 <meta property="og:description" content="Panadería y pastelería artesanal">
-<meta property="og:url" content="https://surko-cocina.github.io/prueba/">
+<meta property="og:url" content="https://surkofunes.vercel.app/">
 <meta property="og:image" content="https://surko-cocina.github.io/prueba/surko-icon-512.png">
 <meta property="og:image:secure_url" content="https://surko-cocina.github.io/prueba/surko-icon-512.png">
 <meta property="og:image:type" content="image/png">
@@ -4408,12 +4408,12 @@ function renderStockAlerts(products){
 //  Corrige el retroceso de datos por snapshots remotos viejos.
 // ══════════════════════════════════════
 const firebaseConfig=window.SURKO_FIREBASE_CONFIG||{
-  apiKey:"AIzaSyCr6HHjYdStOAHpdPCNqz8bYnhZmVzadFk",
-  authDomain:"surkofunes.firebaseapp.com",
-  projectId:"surkofunes",
-  storageBucket:"surkofunes.firebasestorage.app",
-  messagingSenderId:"88504165904",
-  appId:"1:88504165904:web:56d013b4c6cd5355f88c95"
+  apiKey:"AIzaSyCSK-SK1-ddj_zvV9xLWqFkDNy2VcYY0lc",
+  authDomain:"surko-cocina.firebaseapp.com",
+  projectId:"surko-cocina",
+  storageBucket:"surko-cocina.firebasestorage.app",
+  messagingSenderId:"14894474397",
+  appId:"1:14894474397:web:94fded6257318281002074"
 };
 const SURKO_SYNC_COLLECTION='surko_sync_indexnuevo_20260430';
 
@@ -4440,8 +4440,21 @@ async function initFirebaseSync(attempt=0){
       return;
     }
     if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
-    if(!firebase.auth().currentUser)await firebase.auth().signInAnonymously();
+
+    // La autenticación anónima mejora la seguridad cuando está habilitada,
+    // pero no debe impedir la lectura pública del catálogo si Auth está desactivado.
+    try{
+      if(firebase.auth&&!firebase.auth().currentUser){
+        await firebase.auth().signInAnonymously();
+      }
+    }catch(authErr){
+      console.warn('Firebase Auth anónimo no disponible; se continúa con Firestore según sus reglas:',authErr.message);
+    }
+
     const db=firebase.firestore();
+    try{
+      db.settings({ignoreUndefinedProperties:true});
+    }catch(settingsErr){}
     window.__syncDb=db;
 
     const baseSet=LS.set.bind(LS);
@@ -4605,6 +4618,22 @@ async function initFirebaseSync(attempt=0){
         remoteUpdated[key]=remoteStamp;
 
         const stampCmp=compareStamp(localStamp,remoteStamp);
+        const localScore=valueScore(key,local);
+        const remoteScore=valueScore(key,remote);
+        const localIsMeaningful=local!==null&&typeof local!=='undefined'&&localScore>0&&!isDefaultValue(key,local);
+        const remoteIsEmpty=remote===null||typeof remote==='undefined'||remoteScore===0;
+        const remoteIsDefault=isDefaultValue(key,remote);
+
+        // Migración segura: nunca permitir que un documento remoto vacío o de demostración
+        // destruya productos, categorías, configuraciones o pedidos reales guardados localmente.
+        // Esto permite que el navegador administrador suba automáticamente sus cambios
+        // existentes al proyecto Firebase correcto después de actualizar este archivo.
+        if(localIsMeaningful&&(remoteIsEmpty||remoteIsDefault)){
+          markLocalChange(key);
+          await pushKey(key);
+          return;
+        }
+
         if(local!==null&&typeof local!=='undefined'&&stampCmp>0){
           await pushKey(key);
           return;
@@ -4691,7 +4720,8 @@ async function initFirebaseSync(attempt=0){
         updateSyncBadges();
         syncKeys.forEach(k=>window.handleSyncedUpdate&&window.handleSyncedUpdate(k));
       }catch(err){
-        console.log('Sync bootstrap fallback to local mode',err.message);
+        console.error('No se pudo sincronizar SURKO con Firestore:',err);
+        window.__syncDisabledReason=err&&err.message?err.message:'Error desconocido de Firestore';
         window.__syncReady=false;
         updateSyncBadges();
       }
@@ -4713,7 +4743,7 @@ async function initFirebaseSync(attempt=0){
     window.resetLocalSyncVersions=function(){localStorage.removeItem(META_KEY);};
 
     bootstrapSync();
-  }catch(e){console.log('Firebase:',e.message);}
+  }catch(e){console.error('Error al inicializar Firebase SURKO:',e);window.__syncReady=false;window.__syncDisabledReason=e&&e.message?e.message:'Error desconocido de Firebase';if(typeof window.updateSyncBadges==='function')window.updateSyncBadges();}
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initFirebaseSync,{once:true});else initFirebaseSync();
 </script>
