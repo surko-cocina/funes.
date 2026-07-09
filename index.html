@@ -368,6 +368,51 @@ input,select,textarea{font-size:16px!important;}
 [data-theme="dark"] .catalog-skeleton-card::before{
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);
 }
+.surko-client-info-loading{
+  position:relative;
+  opacity:.72;
+}
+.surko-client-info-loading::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);
+  animation:catalog-shimmer 1.25s infinite;
+}
+.hero-img-col.surko-client-img-loading{
+  min-height:220px;
+  background:var(--bg3);
+}
+.hero-img-col.surko-client-img-loading img{
+  opacity:.28;
+  filter:blur(2px);
+}
+.hero-img-col.surko-client-img-loading::after{
+  content:'Cargando información actualizada...';
+  position:absolute;
+  left:20px;
+  right:20px;
+  bottom:18px;
+  z-index:2;
+  padding:10px 12px;
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(0,0,0,.28);
+  color:#fff;
+  font-size:11px;
+  letter-spacing:.8px;
+  text-transform:uppercase;
+  text-align:center;
+  backdrop-filter:blur(8px);
+}
+.surko-footer-loading{
+  color:rgba(255,255,255,.36)!important;
+  font-style:italic;
+}
+[data-theme="dark"] .surko-client-info-loading::after{
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);
+}
 
 .pcard{background:var(--bg2);cursor:pointer;transition:var(--trans);display:flex;flex-direction:column;}
 .pcard-img{width:100%;aspect-ratio:4/3;overflow:hidden;background:var(--bg3);position:relative;}
@@ -3260,12 +3305,24 @@ initData();
 window.__surkoCatalogBootPending=false;
 window.__surkoCatalogSyncSettled=false;
 window.__surkoCatalogLoadingFallbackTimer=null;
+window.__surkoClientInfoBootPending=false;
+window.__surkoClientInfoSyncSettled=false;
+window.__surkoClientInfoLoadingFallbackTimer=null;
+window.__surkoClientInfoPendingKeys={};
+window.__surkoInitialHoldPrepared=false;
+
+const CLIENT_INFO_SYNC_KEYS=['hero_content','banner','banner_img','config'];
+const CLIENT_INFO_CORE_KEYS=['hero_content','banner','config'];
 
 function surkoStableString(v){try{return JSON.stringify(v===undefined?null:v);}catch(e){return String(v);}}
 function isSurkoDefaultLocalValue(key,value){
   try{
     if(key==='categories'&&typeof DC!=='undefined')return surkoStableString(value)===surkoStableString(DC);
     if(key==='products'&&typeof DP!=='undefined')return surkoStableString(value)===surkoStableString(DP);
+    if(key==='config'&&typeof DCFG!=='undefined')return surkoStableString(value)===surkoStableString(DCFG);
+    if(key==='banner'&&typeof DBAN!=='undefined')return surkoStableString(value)===surkoStableString(DBAN);
+    if(key==='hero_content'&&typeof DHERO!=='undefined')return surkoStableString(value)===surkoStableString(DHERO);
+    if(key==='banner_img')return value===null||typeof value==='undefined'||String(value||'').trim()==='';
     if(key==='promos'&&typeof DPRO!=='undefined')return surkoStableString(value)===surkoStableString(DPRO);
   }catch(e){}
   return false;
@@ -3275,8 +3332,53 @@ function hasMeaningfulLocalCatalog(){
   const categories=LS.get('categories');
   return Array.isArray(products)&&products.length>0&&!isSurkoDefaultLocalValue('products',products)&&Array.isArray(categories)&&categories.length>0&&!isSurkoDefaultLocalValue('categories',categories);
 }
+function hasMeaningfulLocalClientKey(key){
+  if(localStorage.getItem('surko_'+key)===null)return false;
+  const value=LS.get(key);
+  if(key==='banner_img')return typeof value==='string'&&value.trim().length>0;
+  return value!==null&&typeof value!=='undefined'&&!isSurkoDefaultLocalValue(key,value);
+}
+function hasMeaningfulLocalClientInfo(){
+  return CLIENT_INFO_SYNC_KEYS.some(key=>hasMeaningfulLocalClientKey(key));
+}
+function prepareClientInfoSyncHold(){
+  const pending={};
+  const hasCoreData=CLIENT_INFO_CORE_KEYS.some(key=>hasMeaningfulLocalClientKey(key));
+  CLIENT_INFO_SYNC_KEYS.forEach(key=>{pending[key]=!hasMeaningfulLocalClientKey(key);});
+  if(hasCoreData&&!hasMeaningfulLocalClientKey('banner_img'))pending.banner_img=false;
+  window.__surkoClientInfoPendingKeys=pending;
+  window.__surkoClientInfoBootPending=Object.keys(pending).some(key=>pending[key]);
+  window.__surkoClientInfoSyncSettled=false;
+  if(window.__surkoClientInfoBootPending){
+    if(window.__surkoClientInfoLoadingFallbackTimer)clearTimeout(window.__surkoClientInfoLoadingFallbackTimer);
+    window.__surkoClientInfoLoadingFallbackTimer=setTimeout(function(){
+      if(!window.__syncReady&&typeof window.releaseClientInfoLoading==='function')window.releaseClientInfoLoading(true);
+    },9000);
+  }
+}
+function prepareSurkoInitialSyncHolds(){
+  if(window.__surkoInitialHoldPrepared)return;
+  window.__surkoInitialHoldPrepared=true;
+  if(!hasMeaningfulLocalCatalog()){
+    window.__surkoCatalogBootPending=true;
+    if(window.__surkoCatalogLoadingFallbackTimer)clearTimeout(window.__surkoCatalogLoadingFallbackTimer);
+    window.__surkoCatalogLoadingFallbackTimer=setTimeout(function(){
+      if(!window.__syncReady&&typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(true);
+    },8000);
+  }
+  prepareClientInfoSyncHold();
+}
 function shouldHoldCatalogForSync(){
   return !!window.__surkoCatalogBootPending&&!hasMeaningfulLocalCatalog();
+}
+function shouldHoldClientInfoKey(key){
+  return !!window.__surkoClientInfoBootPending&&!!window.__surkoClientInfoPendingKeys&&!!window.__surkoClientInfoPendingKeys[key]&&!hasMeaningfulLocalClientKey(key);
+}
+function shouldHoldHeroTextForSync(){
+  return shouldHoldClientInfoKey('hero_content')||shouldHoldClientInfoKey('banner');
+}
+function shouldHoldAnyClientInfoForSync(){
+  return CLIENT_INFO_SYNC_KEYS.some(key=>shouldHoldClientInfoKey(key));
 }
 function renderCatalogLoadingPlaceholder(){
   const grid=document.getElementById('products-grid');
@@ -3288,6 +3390,46 @@ function renderCatalogLoadingPlaceholder(){
   if(promos)promos.innerHTML='';
   if(!grid)return;
   grid.innerHTML='<div class="catalog-loading-card"><div class="catalog-loading-head"><div class="catalog-loading-title">Actualizando catálogo</div><div class="catalog-loading-sub">Estamos trayendo productos, precios y categorías reales desde la base compartida.</div></div><div class="catalog-skeleton-grid"><div class="catalog-skeleton-card"><div class="catalog-skeleton-img"></div><div class="catalog-skeleton-line"></div><div class="catalog-skeleton-line short"></div></div><div class="catalog-skeleton-card"><div class="catalog-skeleton-img"></div><div class="catalog-skeleton-line"></div><div class="catalog-skeleton-line short"></div></div><div class="catalog-skeleton-card"><div class="catalog-skeleton-img"></div><div class="catalog-skeleton-line"></div><div class="catalog-skeleton-line short"></div></div><div class="catalog-skeleton-card"><div class="catalog-skeleton-img"></div><div class="catalog-skeleton-line"></div><div class="catalog-skeleton-line short"></div></div></div></div>';
+}
+function renderClientInfoLoadingPlaceholder(keys){
+  keys=Array.isArray(keys)&&keys.length?keys:CLIENT_INFO_SYNC_KEYS;
+  const client=document.getElementById('client-mode');
+  if(!client||!client.classList.contains('is-active'))return;
+  if(keys.includes('hero_content')||keys.includes('banner')){
+    const heroText=document.querySelector('.hero-text-col');
+    if(heroText)heroText.classList.add('surko-client-info-loading');
+    const eyebrow=document.getElementById('hero-eyebrow-el');
+    const title=document.getElementById('hero-title-el');
+    const sub=document.getElementById('hero-sub-el');
+    if(eyebrow){eyebrow.textContent='SURKO';eyebrow.style.display='';}
+    if(title)title.textContent='Cargando información actualizada';
+    if(sub)sub.textContent='Estamos sincronizando el inicio con la base compartida.';
+    const strip=document.getElementById('delivery-strip-el');
+    if(strip)strip.classList.add('surko-client-info-loading');
+  }
+  if(keys.includes('banner_img')){
+    const heroImgCol=document.querySelector('.hero-img-col');
+    if(heroImgCol)heroImgCol.classList.add('surko-client-img-loading');
+  }
+  if(keys.includes('config')){
+    ['footer-horario','footer-address','footer-whatsapp'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent='Cargando información actualizada...';el.classList.add('surko-footer-loading');}});
+  }
+}
+function clearClientInfoLoading(keys){
+  keys=Array.isArray(keys)&&keys.length?keys:CLIENT_INFO_SYNC_KEYS;
+  if((keys.includes('hero_content')||keys.includes('banner'))&&!shouldHoldHeroTextForSync()){
+    const heroText=document.querySelector('.hero-text-col');
+    if(heroText)heroText.classList.remove('surko-client-info-loading');
+    const strip=document.getElementById('delivery-strip-el');
+    if(strip)strip.classList.remove('surko-client-info-loading');
+  }
+  if(keys.includes('banner_img')&&!shouldHoldClientInfoKey('banner_img')){
+    const heroImgCol=document.querySelector('.hero-img-col');
+    if(heroImgCol)heroImgCol.classList.remove('surko-client-img-loading');
+  }
+  if(keys.includes('config')&&!shouldHoldClientInfoKey('config')){
+    ['footer-horario','footer-address','footer-whatsapp'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('surko-footer-loading');});
+  }
 }
 function releaseCatalogLoading(renderAfterRelease){
   window.__surkoCatalogBootPending=false;
@@ -3304,8 +3446,38 @@ function releaseCatalogLoading(renderAfterRelease){
     try{if(typeof renderProducts==='function')renderProducts();}catch(e){}
   }
 }
+function releaseClientInfoLoading(renderAfterRelease,key){
+  if(key){
+    if(window.__surkoClientInfoPendingKeys)window.__surkoClientInfoPendingKeys[key]=false;
+  }else{
+    CLIENT_INFO_SYNC_KEYS.forEach(k=>{if(window.__surkoClientInfoPendingKeys)window.__surkoClientInfoPendingKeys[k]=false;});
+  }
+  window.__surkoClientInfoBootPending=shouldHoldAnyClientInfoForSync();
+  window.__surkoClientInfoSyncSettled=!window.__surkoClientInfoBootPending;
+  if(!window.__surkoClientInfoBootPending&&window.__surkoClientInfoLoadingFallbackTimer){
+    clearTimeout(window.__surkoClientInfoLoadingFallbackTimer);
+    window.__surkoClientInfoLoadingFallbackTimer=null;
+  }
+  clearClientInfoLoading(key?[key]:CLIENT_INFO_SYNC_KEYS);
+  if(!renderAfterRelease)return;
+  const client=document.getElementById('client-mode');
+  if(client&&client.classList.contains('is-active')){
+    try{if(!key||key==='banner')loadBannerClient();}catch(e){}
+    try{if(!key||key==='config')loadConfigClient();}catch(e){}
+    try{if(!key||key==='banner_img')applyBannerImg(LS.get('banner_img')||null);}catch(e){}
+    try{if(!key||key==='hero_content')applyHeroContent(LS.get('hero_content')||DHERO);}catch(e){}
+  }
+}
+function releaseSurkoInitialLoading(renderAfterRelease){
+  if(typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(renderAfterRelease);
+  if(typeof window.releaseClientInfoLoading==='function')window.releaseClientInfoLoading(renderAfterRelease);
+}
 window.renderCatalogLoadingPlaceholder=renderCatalogLoadingPlaceholder;
 window.releaseCatalogLoading=releaseCatalogLoading;
+window.renderClientInfoLoadingPlaceholder=renderClientInfoLoadingPlaceholder;
+window.releaseClientInfoLoading=releaseClientInfoLoading;
+window.releaseSurkoInitialLoading=releaseSurkoInitialLoading;
+prepareSurkoInitialSyncHolds();
 
 function normalizeCategory(cat){return {...cat,subs:Array.isArray(cat.subs)?cat.subs:[]};}
 function getCategories(){return (LS.get('categories')||DC).map(normalizeCategory);}
@@ -3585,6 +3757,8 @@ function saveHeroContent(){
 }
 
 function applyHeroContent(h){
+  if(shouldHoldClientInfoKey('hero_content')){renderClientInfoLoadingPlaceholder(['hero_content']);return;}
+  clearClientInfoLoading(['hero_content','banner']);
   if(!h)h=getHero();
   // Access screen
   const tagEl=document.getElementById('access-client-tag-el');
@@ -3623,7 +3797,7 @@ function applyHeroContent(h){
 }
 
 // Apply hero content on load
-(()=>{const h=LS.get('hero_content');if(h)applyHeroContent(h);})();
+(()=>{const h=LS.get('hero_content');if(h&&!shouldHoldClientInfoKey('hero_content'))applyHeroContent(h);})();
 
 // ── BANNER IMAGE ─────────────────────────────────────────────────────
 let pendingBannerImg=null;
@@ -3635,14 +3809,16 @@ function compressImage(dataUrl,maxWidth=800,quality=0.75){return new Promise((re
 function saveBannerImg(){if(!pendingBannerImg)return;compressImage(pendingBannerImg,800,0.75).then(compressed=>{LS.set('banner_img',compressed);applyBannerImg(compressed);pendingBannerImg=null;document.getElementById('save-banner-img-btn').style.display='none';showToast('✓ Imagen guardada','success');});}
 function removeBannerImg(){LS.set('banner_img',null);pendingBannerImg=null;applyBannerImg(null);updateBannerAdminPreview(null);document.getElementById('save-banner-img-btn').style.display='none';document.getElementById('remove-banner-img-btn').style.display='none';showToast('Imagen eliminada','');}
 function applyBannerImg(src){
+  if(shouldHoldClientInfoKey('banner_img')){renderClientInfoLoadingPlaceholder(['banner_img']);return;}
+  clearClientInfoLoading(['banner_img']);
   const lb=document.getElementById('access-left-bg');
   if(lb){if(src){lb.style.backgroundImage=`url('${src}')`;lb.style.backgroundSize='cover';lb.style.backgroundPosition='center';lb.style.opacity='.8';}else{lb.style.backgroundImage="url('https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&q=80')";lb.style.opacity='.55';}}
   const mImg=document.getElementById('amb-img');const mEmpty=document.getElementById('amb-empty');
   if(mImg&&mEmpty){if(src){mImg.src=src;mImg.style.display='block';mEmpty.style.display='none';}else{mImg.style.display='none';mEmpty.style.display='flex';}}
   const heroImg=document.getElementById('hero-bg-img');
-  if(heroImg&&src){heroImg.src=src;}
+  if(heroImg){heroImg.src=src||'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=900&q=80';}
 }
-(()=>{const s=LS.get('banner_img');if(s){applyBannerImg(s);setTimeout(()=>{updateBannerAdminPreview(s);const rb=document.getElementById('remove-banner-img-btn');if(rb)rb.style.display='block';},100);}})();
+(()=>{const s=LS.get('banner_img');if(s&&!shouldHoldClientInfoKey('banner_img')){applyBannerImg(s);setTimeout(()=>{updateBannerAdminPreview(s);const rb=document.getElementById('remove-banner-img-btn');if(rb)rb.style.display='block';},100);}})();
 
 // BANNER TEXT
 function previewBanner(){
@@ -3727,9 +3903,9 @@ document.addEventListener('click',e=>{const wrap=document.querySelector('.addr-w
 
 // CLIENT STORE
 let cart=[],currentProduct=null,modalQty=1,selectedVariant='';
-function initClientStore(){loadBannerClient();loadConfigClient();renderCategoryTabs();renderPromosClient();renderProducts();updateCartUI();const s=LS.get('banner_img');if(s)applyBannerImg(s);const h=LS.get('hero_content');if(h)applyHeroContent(h);}
-function loadBannerClient(){const b=LS.get('banner')||DBAN;const t=document.getElementById('hero-title-el');if(t)t.innerHTML=formatHeroTitle(b.title||'');const s=document.getElementById('hero-sub-el');if(s)s.textContent=b.subtitle;}
-function loadConfigClient(){const c=LS.get('config')||DCFG;const h=document.getElementById('footer-horario');if(h)h.textContent=c.hours||'Lun–Sáb: 9:00–20:00';const a=document.getElementById('footer-address');if(a)a.textContent=c.address||'Rosario, Santa Fe';const w=document.getElementById('footer-whatsapp');if(w)w.textContent=c.whatsapp?'+'+c.whatsapp:'WhatsApp';}
+function initClientStore(){if(shouldHoldAnyClientInfoForSync())renderClientInfoLoadingPlaceholder();loadBannerClient();loadConfigClient();renderCategoryTabs();renderPromosClient();renderProducts();updateCartUI();const s=LS.get('banner_img');applyBannerImg(s||null);const h=LS.get('hero_content');applyHeroContent(h||DHERO);}
+function loadBannerClient(){if(shouldHoldHeroTextForSync()){renderClientInfoLoadingPlaceholder(['hero_content','banner']);return;}clearClientInfoLoading(['hero_content','banner']);const b=LS.get('banner')||DBAN;const t=document.getElementById('hero-title-el');if(t)t.innerHTML=formatHeroTitle(b.title||'');const s=document.getElementById('hero-sub-el');if(s)s.textContent=b.subtitle;}
+function loadConfigClient(){if(shouldHoldClientInfoKey('config')){renderClientInfoLoadingPlaceholder(['config']);return;}clearClientInfoLoading(['config']);const c=LS.get('config')||DCFG;const h=document.getElementById('footer-horario');if(h)h.textContent=c.hours||'Lun–Sáb: 9:00–20:00';const a=document.getElementById('footer-address');if(a)a.textContent=c.address||'Rosario, Santa Fe';const w=document.getElementById('footer-whatsapp');if(w)w.textContent=c.whatsapp?'+'+c.whatsapp:'WhatsApp';}
 function renderCategoryTabs(){if(shouldHoldCatalogForSync()){renderCatalogLoadingPlaceholder();return;}const cats=getCategories();document.getElementById('category-tabs').innerHTML=`<button class="cat-pill promo-category-btn" onclick="filterCat('promos',this)">🏷️ PROMOS</button><button class="cat-pill active" onclick="filterCat('todos',this)">Todos</button>`+cats.map(c=>`<button class="cat-pill" onclick="filterCat('${escapeHtml(c.name)}',this)">${escapeHtml(c.name)}</button>`).join('');}
 function renderPromosClient(){const wrap=document.getElementById('client-promos');if(!wrap)return;wrap.innerHTML='';}
 function renderCategoryTabs(){if(shouldHoldCatalogForSync()){renderCatalogLoadingPlaceholder();return;}const cats=getCategories();document.getElementById('category-tabs').innerHTML=`<button class="cat-pill promo-category-btn" onclick="filterCat('promos',this)">🏷️ PROMOS</button><button class="cat-pill active" onclick="filterCat('todos',this)">Todos</button>`+cats.map(c=>`<button class="cat-pill" onclick="filterCat(${jsStringAttr(c.name)},this)">${escapeHtml(c.name)}</button>`).join('');}
@@ -4622,7 +4798,7 @@ async function initFirebaseSync(attempt=0){
     window.__syncReady=false;
     window.__syncDisabledReason='No se pudo cargar Firebase. Revisá conexión, dominios permitidos y scripts externos.';
     if(typeof window.updateSyncBadges==='function')window.updateSyncBadges();
-    if(typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(true);
+    if(typeof window.releaseSurkoInitialLoading==='function')window.releaseSurkoInitialLoading(true);
     console.log('Firebase sync desactivado: SDK no disponible.');
     return;
   }
@@ -4631,7 +4807,7 @@ async function initFirebaseSync(attempt=0){
     if(!hasFirebaseConfig){
       window.__syncReady=false;
       window.__syncDisabledReason='Configura un proyecto Firebase nuevo antes de sincronizar.';
-      if(typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(true);
+      if(typeof window.releaseSurkoInitialLoading==='function')window.releaseSurkoInitialLoading(true);
       console.log('Firebase sync desactivado: faltan credenciales del proyecto nuevo.');
       return;
     }
@@ -4662,7 +4838,8 @@ async function initFirebaseSync(attempt=0){
     const META_KEY='surko_sync_local_versions_v2';
 
     function docRef(key){return db.collection(SURKO_SYNC_COLLECTION).doc(key);}
-    function nowIso(){return new Date().toISOString();}
+    let lastSyncStampMs=0;
+    function nowIso(){const now=Date.now();const next=Math.max(now,lastSyncStampMs+1);lastSyncStampMs=next;return new Date(next).toISOString();}
     function safeClone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
     function stableString(v){try{return JSON.stringify(v===undefined?null:v);}catch(e){return String(v);}}
     function getMeta(){try{return JSON.parse(localStorage.getItem(META_KEY)||'{}')||{};}catch(e){return {};}}
@@ -4695,6 +4872,8 @@ async function initFirebaseSync(attempt=0){
         if(key==='products'&&typeof DP!=='undefined')return stableString(v)===stableString(DP);
         if(key==='config'&&typeof DCFG!=='undefined')return stableString(v)===stableString(DCFG);
         if(key==='banner'&&typeof DBAN!=='undefined')return stableString(v)===stableString(DBAN);
+        if(key==='hero_content'&&typeof DHERO!=='undefined')return stableString(v)===stableString(DHERO);
+        if(key==='banner_img')return v===null||typeof v==='undefined'||String(v||'').trim()==='';
         if(key==='promos'&&typeof DPRO!=='undefined')return stableString(v)===stableString(DPRO);
       }catch(e){}
       return false;
@@ -4762,6 +4941,7 @@ async function initFirebaseSync(attempt=0){
     };
 
     window.handleSyncedUpdate=function(key){
+      if(['hero_content','banner','banner_img','config'].includes(key)&&typeof window.releaseClientInfoLoading==='function')window.releaseClientInfoLoading(false,key);
       if(key==='categories'){
         callSafe('renderCategoryTabs');callSafe('renderCategoriesAdmin');callSafe('refreshProductSubcategoryOptions');
       }
@@ -4784,10 +4964,10 @@ async function initFirebaseSync(attempt=0){
         callSafe('loadBannerClient');callSafe('loadBannerAdmin');
       }
       if(key==='banner_img'){
-        const s=LS.get('banner_img');if(s)callSafe('applyBannerImg',[s]);
+        const s=LS.get('banner_img');callSafe('applyBannerImg',[s||null]);
       }
       if(key==='hero_content'){
-        const h=LS.get('hero_content');if(h)callSafe('applyHeroContent',[h]);callSafe('loadHeroEditor');
+        const h=LS.get('hero_content');callSafe('applyHeroContent',[h||DHERO]);callSafe('loadHeroEditor');
       }
       if(key==='ticket_template')callSafe('loadTicketSection');
       if(key==='form_fields'){
@@ -4906,22 +5086,30 @@ async function initFirebaseSync(attempt=0){
         window.__syncReady=false;
         updateSyncBadges();
 
-        for(const key of syncKeys){
+        const results=await Promise.allSettled(syncKeys.map(async key=>{
           await resolveInitialValue(key);
           bootstrapped[key]=true;
           listenKey(key);
+        }));
+        const failed=results.filter(r=>r.status==='rejected');
+        if(failed.length===syncKeys.length){
+          throw failed[0].reason||new Error('No se pudo resolver ninguna clave de Firestore');
+        }
+        if(failed.length){
+          console.warn('Sincronización parcial de SURKO:',failed.map(f=>f.reason&&f.reason.message?f.reason.message:String(f.reason)).join(' | '));
         }
 
         window.__syncReady=true;
         updateSyncBadges();
         if(typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(false);
+        if(typeof window.releaseClientInfoLoading==='function')window.releaseClientInfoLoading(false);
         syncKeys.forEach(k=>window.handleSyncedUpdate&&window.handleSyncedUpdate(k));
       }catch(err){
         console.error('No se pudo sincronizar SURKO con Firestore:',err);
         window.__syncDisabledReason=err&&err.message?err.message:'Error desconocido de Firestore';
         window.__syncReady=false;
         updateSyncBadges();
-        if(typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(true);
+        if(typeof window.releaseSurkoInitialLoading==='function')window.releaseSurkoInitialLoading(true);
       }
     }
 
@@ -4941,7 +5129,7 @@ async function initFirebaseSync(attempt=0){
     window.resetLocalSyncVersions=function(){localStorage.removeItem(META_KEY);};
 
     bootstrapSync();
-  }catch(e){console.error('Error al inicializar Firebase SURKO:',e);window.__syncReady=false;window.__syncDisabledReason=e&&e.message?e.message:'Error desconocido de Firebase';if(typeof window.updateSyncBadges==='function')window.updateSyncBadges();if(typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(true);}
+  }catch(e){console.error('Error al inicializar Firebase SURKO:',e);window.__syncReady=false;window.__syncDisabledReason=e&&e.message?e.message:'Error desconocido de Firebase';if(typeof window.updateSyncBadges==='function')window.updateSyncBadges();if(typeof window.releaseSurkoInitialLoading==='function')window.releaseSurkoInitialLoading(true);}
 }
 const FIREBASE_SDK_URLS=[
   'https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js',
@@ -4960,21 +5148,18 @@ function ensureFirebaseSyncLoaded(){
 function scheduleFirebaseAfterLogin(){
   if(firebaseSyncScheduled||window.__syncDb)return;
   firebaseSyncScheduled=true;
-  const start=()=>ensureFirebaseSyncLoaded().catch(error=>{firebaseSyncScheduled=false;console.error('No se pudo cargar Firebase de forma diferida:',error);if(typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(true);});
+  const start=()=>ensureFirebaseSyncLoaded().catch(error=>{firebaseSyncScheduled=false;console.error('No se pudo cargar Firebase de forma diferida:',error);if(typeof window.releaseSurkoInitialLoading==='function')window.releaseSurkoInitialLoading(true);});
   if('requestIdleCallback' in window)window.requestIdleCallback(start,{timeout:1000});else setTimeout(start,0);
 }
 window.ensureFirebaseSyncLoaded=ensureFirebaseSyncLoaded;
 window.scheduleFirebaseAfterLogin=scheduleFirebaseAfterLogin;
 function startEarlySurkoCatalogSync(){
-  if(!hasMeaningfulLocalCatalog()){
-    window.__surkoCatalogBootPending=true;
-    if(window.__surkoCatalogLoadingFallbackTimer)clearTimeout(window.__surkoCatalogLoadingFallbackTimer);
-    window.__surkoCatalogLoadingFallbackTimer=setTimeout(function(){
-      if(!window.__syncReady&&typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(true);
-    },8000);
-  }
+  prepareSurkoInitialSyncHolds();
   scheduleFirebaseAfterLogin();
-  const paintLoading=function(){if(shouldHoldCatalogForSync())renderCatalogLoadingPlaceholder();};
+  const paintLoading=function(){
+    if(shouldHoldCatalogForSync())renderCatalogLoadingPlaceholder();
+    if(shouldHoldAnyClientInfoForSync())renderClientInfoLoadingPlaceholder();
+  };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',paintLoading,{once:true});else paintLoading();
 }
 startEarlySurkoCatalogSync();
