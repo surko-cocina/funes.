@@ -2,6 +2,36 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<script>
+window.SURKO_BUILD_ID='2026-07-09-01';
+(function(){
+  var currentBuild=String(window.SURKO_BUILD_ID||'');
+  var sessionKey='surko_build_reload_done';
+  if(!currentBuild||!window.fetch)return;
+  try{
+    var checkUrl=new URL(window.location.href);
+    checkUrl.searchParams.set('_freshcheck',String(Date.now()));
+    fetch(checkUrl.toString(),{cache:'no-store',credentials:'same-origin'})
+      .then(function(response){return response&&response.ok?response.text():'';})
+      .then(function(html){
+        if(!html)return;
+        var match=html.match(/window\.SURKO_BUILD_ID\s*=\s*['"]([^'"]+)['"]/);
+        var serverBuild=match&&match[1]?String(match[1]):'';
+        if(!serverBuild||serverBuild===currentBuild)return;
+        if(window.sessionStorage&&sessionStorage.getItem(sessionKey)==='1')return;
+        if(window.sessionStorage)sessionStorage.setItem(sessionKey,'1');
+        var reloadUrl=new URL(window.location.href);
+        reloadUrl.searchParams.set('_surko_build',serverBuild);
+        reloadUrl.searchParams.set('_cache_bust',String(Date.now()));
+        location.replace(reloadUrl.toString());
+      })
+      .catch(function(){});
+  }catch(e){}
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -281,6 +311,64 @@ input,select,textarea{font-size:16px!important;}
 .promo-image-preview.is-empty{font-size:34px;color:#b5a898}
 
 .products-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--border);}
+.catalog-loading-card{
+  grid-column:1/-1;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:22px 16px;
+  box-shadow:var(--shadow-sm);
+}
+.catalog-loading-head{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin-bottom:16px;
+}
+.catalog-loading-title{
+  font-family:var(--font-serif);
+  font-size:18px;
+  font-weight:500;
+  color:var(--text);
+}
+.catalog-loading-sub{
+  font-size:12px;
+  color:var(--text-md);
+  line-height:1.5;
+}
+.catalog-skeleton-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+}
+.catalog-skeleton-card{
+  min-height:150px;
+  border-radius:14px;
+  background:var(--bg3);
+  overflow:hidden;
+  position:relative;
+}
+.catalog-skeleton-card::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);
+  animation:catalog-shimmer 1.25s infinite;
+}
+.catalog-skeleton-line{
+  height:10px;
+  border-radius:999px;
+  background:var(--bg4);
+  margin:10px 12px;
+}
+.catalog-skeleton-line.short{width:56%;}
+.catalog-skeleton-img{height:92px;background:var(--bg4);}
+@keyframes catalog-shimmer{100%{transform:translateX(100%);}}
+[data-theme="dark"] .catalog-skeleton-card::before{
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);
+}
+
 .pcard{background:var(--bg2);cursor:pointer;transition:var(--trans);display:flex;flex-direction:column;}
 .pcard-img{width:100%;aspect-ratio:4/3;overflow:hidden;background:var(--bg3);position:relative;}
 .pcard-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s ease;}
@@ -3169,6 +3257,56 @@ function initData(){
 }
 initData();
 
+window.__surkoCatalogBootPending=false;
+window.__surkoCatalogSyncSettled=false;
+window.__surkoCatalogLoadingFallbackTimer=null;
+
+function surkoStableString(v){try{return JSON.stringify(v===undefined?null:v);}catch(e){return String(v);}}
+function isSurkoDefaultLocalValue(key,value){
+  try{
+    if(key==='categories'&&typeof DC!=='undefined')return surkoStableString(value)===surkoStableString(DC);
+    if(key==='products'&&typeof DP!=='undefined')return surkoStableString(value)===surkoStableString(DP);
+    if(key==='promos'&&typeof DPRO!=='undefined')return surkoStableString(value)===surkoStableString(DPRO);
+  }catch(e){}
+  return false;
+}
+function hasMeaningfulLocalCatalog(){
+  const products=LS.get('products');
+  const categories=LS.get('categories');
+  return Array.isArray(products)&&products.length>0&&!isSurkoDefaultLocalValue('products',products)&&Array.isArray(categories)&&categories.length>0&&!isSurkoDefaultLocalValue('categories',categories);
+}
+function shouldHoldCatalogForSync(){
+  return !!window.__surkoCatalogBootPending&&!hasMeaningfulLocalCatalog();
+}
+function renderCatalogLoadingPlaceholder(){
+  const grid=document.getElementById('products-grid');
+  const count=document.getElementById('products-count');
+  const tabs=document.getElementById('category-tabs');
+  const promos=document.getElementById('client-promos');
+  if(count)count.textContent='Actualizando catálogo...';
+  if(tabs)tabs.innerHTML='<button class="cat-pill active" type="button">Cargando</button>';
+  if(promos)promos.innerHTML='';
+  if(!grid)return;
+  grid.innerHTML='<div class="catalog-loading-card"><div class="catalog-loading-head"><div class="catalog-loading-title">Actualizando catálogo</div><div class="catalog-loading-sub">Estamos trayendo productos, precios y categorías reales desde la base compartida.</div></div><div class="catalog-skeleton-grid"><div class="catalog-skeleton-card"><div class="catalog-skeleton-img"></div><div class="catalog-skeleton-line"></div><div class="catalog-skeleton-line short"></div></div><div class="catalog-skeleton-card"><div class="catalog-skeleton-img"></div><div class="catalog-skeleton-line"></div><div class="catalog-skeleton-line short"></div></div><div class="catalog-skeleton-card"><div class="catalog-skeleton-img"></div><div class="catalog-skeleton-line"></div><div class="catalog-skeleton-line short"></div></div><div class="catalog-skeleton-card"><div class="catalog-skeleton-img"></div><div class="catalog-skeleton-line"></div><div class="catalog-skeleton-line short"></div></div></div></div>';
+}
+function releaseCatalogLoading(renderAfterRelease){
+  window.__surkoCatalogBootPending=false;
+  window.__surkoCatalogSyncSettled=true;
+  if(window.__surkoCatalogLoadingFallbackTimer){
+    clearTimeout(window.__surkoCatalogLoadingFallbackTimer);
+    window.__surkoCatalogLoadingFallbackTimer=null;
+  }
+  if(!renderAfterRelease)return;
+  const client=document.getElementById('client-mode');
+  if(client&&client.classList.contains('is-active')){
+    try{if(typeof renderCategoryTabs==='function')renderCategoryTabs();}catch(e){}
+    try{if(typeof renderPromosClient==='function')renderPromosClient();}catch(e){}
+    try{if(typeof renderProducts==='function')renderProducts();}catch(e){}
+  }
+}
+window.renderCatalogLoadingPlaceholder=renderCatalogLoadingPlaceholder;
+window.releaseCatalogLoading=releaseCatalogLoading;
+
 function normalizeCategory(cat){return {...cat,subs:Array.isArray(cat.subs)?cat.subs:[]};}
 function getCategories(){return (LS.get('categories')||DC).map(normalizeCategory);}
 function normalizePromoSlug(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');}
@@ -3592,14 +3730,15 @@ let cart=[],currentProduct=null,modalQty=1,selectedVariant='';
 function initClientStore(){loadBannerClient();loadConfigClient();renderCategoryTabs();renderPromosClient();renderProducts();updateCartUI();const s=LS.get('banner_img');if(s)applyBannerImg(s);const h=LS.get('hero_content');if(h)applyHeroContent(h);}
 function loadBannerClient(){const b=LS.get('banner')||DBAN;const t=document.getElementById('hero-title-el');if(t)t.innerHTML=formatHeroTitle(b.title||'');const s=document.getElementById('hero-sub-el');if(s)s.textContent=b.subtitle;}
 function loadConfigClient(){const c=LS.get('config')||DCFG;const h=document.getElementById('footer-horario');if(h)h.textContent=c.hours||'Lun–Sáb: 9:00–20:00';const a=document.getElementById('footer-address');if(a)a.textContent=c.address||'Rosario, Santa Fe';const w=document.getElementById('footer-whatsapp');if(w)w.textContent=c.whatsapp?'+'+c.whatsapp:'WhatsApp';}
-function renderCategoryTabs(){const cats=getCategories();document.getElementById('category-tabs').innerHTML=`<button class="cat-pill promo-category-btn" onclick="filterCat('promos',this)">🏷️ PROMOS</button><button class="cat-pill active" onclick="filterCat('todos',this)">Todos</button>`+cats.map(c=>`<button class="cat-pill" onclick="filterCat('${escapeHtml(c.name)}',this)">${escapeHtml(c.name)}</button>`).join('');}
+function renderCategoryTabs(){if(shouldHoldCatalogForSync()){renderCatalogLoadingPlaceholder();return;}const cats=getCategories();document.getElementById('category-tabs').innerHTML=`<button class="cat-pill promo-category-btn" onclick="filterCat('promos',this)">🏷️ PROMOS</button><button class="cat-pill active" onclick="filterCat('todos',this)">Todos</button>`+cats.map(c=>`<button class="cat-pill" onclick="filterCat('${escapeHtml(c.name)}',this)">${escapeHtml(c.name)}</button>`).join('');}
 function renderPromosClient(){const wrap=document.getElementById('client-promos');if(!wrap)return;wrap.innerHTML='';}
-function renderCategoryTabs(){const cats=getCategories();document.getElementById('category-tabs').innerHTML=`<button class="cat-pill promo-category-btn" onclick="filterCat('promos',this)">🏷️ PROMOS</button><button class="cat-pill active" onclick="filterCat('todos',this)">Todos</button>`+cats.map(c=>`<button class="cat-pill" onclick="filterCat(${jsStringAttr(c.name)},this)">${escapeHtml(c.name)}</button>`).join('');}
+function renderCategoryTabs(){if(shouldHoldCatalogForSync()){renderCatalogLoadingPlaceholder();return;}const cats=getCategories();document.getElementById('category-tabs').innerHTML=`<button class="cat-pill promo-category-btn" onclick="filterCat('promos',this)">🏷️ PROMOS</button><button class="cat-pill active" onclick="filterCat('todos',this)">Todos</button>`+cats.map(c=>`<button class="cat-pill" onclick="filterCat(${jsStringAttr(c.name)},this)">${escapeHtml(c.name)}</button>`).join('');}
 function filterCat(cat,el){document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));if(el)el.classList.add('active');renderProducts(cat);}
 function buildImageCarousel(images,baseClass){const safe=(images||[]).filter(Boolean).slice(0,4);if(!safe.length)return '';if(safe.length===1)return `<img src="${safe[0]}" alt="Imagen del producto" loading="lazy" decoding="async">`;return `<div class="${baseClass}-carousel">${safe.map((src,i)=>`<div class="${baseClass}-slide"><img src="${src}" alt="Imagen ${i+1}" loading="lazy" decoding="async"></div>`).join('')}</div><div class="${baseClass}-dots">${safe.map((_,i)=>`<span class="${baseClass}-dot ${i===0?'active':''}"></span>`).join('')}</div>`;}
 function activateCarouselDots(scope){scope.querySelectorAll('.pcard-carousel,.modal-carousel').forEach(carousel=>{const isModal=carousel.classList.contains('modal-carousel');const dotWrap=carousel.parentElement.querySelector(isModal?'.modal-dots':'.pcard-dots');if(!dotWrap)return;const dots=[...dotWrap.children];const update=rafThrottle(()=>{const width=Math.max(1,carousel.clientWidth);const left=carousel.scrollLeft;const idx=Math.round(left/width);dots.forEach((d,i)=>d.classList.toggle('active',i===idx));});if(carousel.dataset.dotsBound!=='1'){carousel.dataset.dotsBound='1';carousel.addEventListener('scroll',update,{passive:true});}update();});}
 function filterProducts(){const q=document.getElementById('search-input').value.toLowerCase();renderProducts(null,(LS.get('products')||DP).filter(p=>p&&p.type!=='promo'&&(p.name.toLowerCase().includes(q)||p.cat.toLowerCase().includes(q)||((p.subcat||'').toLowerCase().includes(q))||(p.desc||'').toLowerCase().includes(q))));}
 function renderProducts(catFilter,overrideList){
+  if(!overrideList&&shouldHoldCatalogForSync()){renderCatalogLoadingPlaceholder();return;}
   const products=(overrideList||(LS.get('products')||DP)).filter(p=>p&&p.type!=='promo');
   const g=document.getElementById('products-grid');
   if(catFilter==='promos'){
@@ -4483,6 +4622,7 @@ async function initFirebaseSync(attempt=0){
     window.__syncReady=false;
     window.__syncDisabledReason='No se pudo cargar Firebase. Revisá conexión, dominios permitidos y scripts externos.';
     if(typeof window.updateSyncBadges==='function')window.updateSyncBadges();
+    if(typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(true);
     console.log('Firebase sync desactivado: SDK no disponible.');
     return;
   }
@@ -4491,6 +4631,7 @@ async function initFirebaseSync(attempt=0){
     if(!hasFirebaseConfig){
       window.__syncReady=false;
       window.__syncDisabledReason='Configura un proyecto Firebase nuevo antes de sincronizar.';
+      if(typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(true);
       console.log('Firebase sync desactivado: faltan credenciales del proyecto nuevo.');
       return;
     }
@@ -4773,12 +4914,14 @@ async function initFirebaseSync(attempt=0){
 
         window.__syncReady=true;
         updateSyncBadges();
+        if(typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(false);
         syncKeys.forEach(k=>window.handleSyncedUpdate&&window.handleSyncedUpdate(k));
       }catch(err){
         console.error('No se pudo sincronizar SURKO con Firestore:',err);
         window.__syncDisabledReason=err&&err.message?err.message:'Error desconocido de Firestore';
         window.__syncReady=false;
         updateSyncBadges();
+        if(typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(true);
       }
     }
 
@@ -4798,7 +4941,7 @@ async function initFirebaseSync(attempt=0){
     window.resetLocalSyncVersions=function(){localStorage.removeItem(META_KEY);};
 
     bootstrapSync();
-  }catch(e){console.error('Error al inicializar Firebase SURKO:',e);window.__syncReady=false;window.__syncDisabledReason=e&&e.message?e.message:'Error desconocido de Firebase';if(typeof window.updateSyncBadges==='function')window.updateSyncBadges();}
+  }catch(e){console.error('Error al inicializar Firebase SURKO:',e);window.__syncReady=false;window.__syncDisabledReason=e&&e.message?e.message:'Error desconocido de Firebase';if(typeof window.updateSyncBadges==='function')window.updateSyncBadges();if(typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(true);}
 }
 const FIREBASE_SDK_URLS=[
   'https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js',
@@ -4817,11 +4960,24 @@ function ensureFirebaseSyncLoaded(){
 function scheduleFirebaseAfterLogin(){
   if(firebaseSyncScheduled||window.__syncDb)return;
   firebaseSyncScheduled=true;
-  const start=()=>ensureFirebaseSyncLoaded().catch(error=>{firebaseSyncScheduled=false;console.error('No se pudo cargar Firebase de forma diferida:',error);});
+  const start=()=>ensureFirebaseSyncLoaded().catch(error=>{firebaseSyncScheduled=false;console.error('No se pudo cargar Firebase de forma diferida:',error);if(typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(true);});
   if('requestIdleCallback' in window)window.requestIdleCallback(start,{timeout:1000});else setTimeout(start,0);
 }
 window.ensureFirebaseSyncLoaded=ensureFirebaseSyncLoaded;
 window.scheduleFirebaseAfterLogin=scheduleFirebaseAfterLogin;
+function startEarlySurkoCatalogSync(){
+  if(!hasMeaningfulLocalCatalog()){
+    window.__surkoCatalogBootPending=true;
+    if(window.__surkoCatalogLoadingFallbackTimer)clearTimeout(window.__surkoCatalogLoadingFallbackTimer);
+    window.__surkoCatalogLoadingFallbackTimer=setTimeout(function(){
+      if(!window.__syncReady&&typeof window.releaseCatalogLoading==='function')window.releaseCatalogLoading(true);
+    },8000);
+  }
+  scheduleFirebaseAfterLogin();
+  const paintLoading=function(){if(shouldHoldCatalogForSync())renderCatalogLoadingPlaceholder();};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',paintLoading,{once:true});else paintLoading();
+}
+startEarlySurkoCatalogSync();
 </script>
 
 <script>
